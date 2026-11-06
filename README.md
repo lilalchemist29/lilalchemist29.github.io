@@ -32,6 +32,35 @@ The tablet downloads the app from here one time. Only the app's files go online;
 2. Get the file onto the tablet (Google Drive, Messenger to yourself, or a USB cable).
 3. In the new app: **Settings → Your data → Restore from backup**, pick the file, tap **Restore**.
 
+## Automatic Google Drive backup (free)
+
+The app can back itself up to your Google Drive whenever the tablet is online, into a folder called **rngwillbake POS backups** (one file per day, last 30 days kept). It can only see files it created there, nothing else in your Drive.
+
+### One-time setup (about 15 minutes, on any browser)
+
+Use the Google account whose Drive should hold the backups.
+
+1. Go to **console.cloud.google.com** and create a project named `rngwillbake POS`.
+2. **Turn on Drive:** search the top bar for **Google Drive API**, open it, and tap **Enable**.
+3. **Sign-in screen:** search for **Google Auth Platform** (or "OAuth consent screen") and tap **Get started**.
+   - App name `rngwillbake POS`, your email as support email.
+   - Audience: **External**. Contact email: yours. Agree and **Create**.
+4. **Permission:** open **Data access → Add or remove scopes**, tick `.../auth/drive.file` (“See, edit, create and delete only the specific Google Drive files you use with this app”), then **Update** and **Save**.
+5. **Publish it:** open **Audience** and tap **Publish app** → **Confirm**. This stops Google from asking for permission again every week. Because the app only uses the “its own files” permission, Google doesn't need to review it.
+6. **Make the key:** open **Clients → Create client**.
+   - Application type: **Web application**. Name: `rngwillbake POS tablet`.
+   - Under **Authorized JavaScript origins**, tap **Add URI** and enter `https://lilalchemist29.github.io` (no slash at the end).
+   - Tap **Create** and copy the **Client ID** (it ends in `.apps.googleusercontent.com`).
+7. **In the app:** Settings → **Google Drive backup** → paste the Client ID → **Save client ID** → **Connect Google Drive**.
+   - Sign in and allow access. If Google shows “Google hasn’t verified this app”, tap **Advanced → Go to rngwillbake POS** (it’s your own app).
+
+### Day to day
+
+- While the tablet is online, the app backs up on its own at most every two hours, whenever there are new sales or changes.
+- Google’s sign-in lasts about an hour. After that, when there’s something new to back up and you’re online, a **Back up to Drive** button appears at the top: one tap and it’s done.
+- With no internet, sales are saved on the tablet as usual and backed up next time you’re online.
+- To restore: open the backup file in the Google Drive app, download it, then use **Settings → Restore from backup**.
+
 ## Everyday notes
 
 - **Back up weekly** and keep the file off the tablet. Uninstalling the app or clearing Chrome's data for it erases everything on the tablet.

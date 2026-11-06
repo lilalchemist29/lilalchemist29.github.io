@@ -751,7 +751,7 @@ function renderSync(){
   el.innerHTML = "<i></i><span>" + m[1] + "</span>";
 }
 function renderChrome(){
-  $("#shop-name").textContent = cfg().shopName;
+  const sn = $("#shop-name"); if (!sn) return; sn.textContent = cfg().shopName;
   document.title = cfg().shopName + " POS";
   $("#tabs").innerHTML = TABS.map(([k, label]) =>
     `<button class="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${label}</button>`).join("");
@@ -760,12 +760,14 @@ function renderChrome(){
   if (S.mode === "local" && !OFFLINE) b = "Device-only mode: sales are saved on this device only.";
   if (S.twoOpen) b = "This app is open in another window too. Close one so sales and stock don’t get mixed up.";
   if (S.spaceLow) b = "This device is almost out of storage space. Back up your data, then free up space so new sales can be saved.";
-  const lb = cfg().lastBackup, due = Object.keys(S.orders).length && (!lb || Date.now() - lb > 7 * 864e5);
+  const lb = Math.max(cfg().lastBackup || 0, OFFLINE ? gd().last || 0 : 0), due = Object.keys(S.orders).length && (!lb || Date.now() - lb > 7 * 864e5);
+  const driveTap = OFFLINE && driveOn() && S.driveTap && navigator.onLine && lastChange() > (gd().last || 0);
   $("#banner").innerHTML = (b ? `<div class="banner">${b}</div>` : "") +
-    (due && S.mode !== "loading" ? `<div class="banner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>${lb ? "It’s been over a week since your last backup." : "You haven’t backed up your data yet."}</span><button class="btn ink sm" data-act="backup">Back up now</button></div>` : "");
+    (driveTap ? `<div class="banner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>${driveBusy ? "Backing up to Google Drive…" : "Online again: one tap to back up today’s sales to Google Drive."}</span>${driveBusy ? "" : `<button class="btn ink sm" data-act="drive-backup">Back up to Drive</button>`}</div>` :
+     due && S.mode !== "loading" ? `<div class="banner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>${lb ? "It’s been over a week since your last backup." : "You haven’t backed up your data yet."}</span><button class="btn ink sm" data-act="${driveOn() ? "drive-backup" : "backup"}">Back up now</button></div>` : "");
   renderSync();
 }
-$("#banner").addEventListener("click", e => { if (e.target.closest('[data-act="backup"]')) makeBackup(); });
+$("#banner").addEventListener("click", e => { if (e.target.closest('[data-act="backup"]')) makeBackup(); if (e.target.closest('[data-act="drive-backup"]')) driveBackup(true); });
 function undoToast(msg, onUndo){
   const t = document.createElement("div");
   t.className = "toast undo"; t.setAttribute("role", "status");
@@ -1988,6 +1990,11 @@ function viewSettings(){
       <h3 style="font-size:16px;margin-top:6px">Full backup</h3>
       <p class="note">One file with everything, including payment photos. Keep it somewhere safe; use it to move to a new device or the app.${c.lastBackup ? ` Last backup: ${fmtDateTime(c.lastBackup)}.` : " No backup yet."}</p>
       <div class="btn-row"><button class="btn banana" data-act="backup">Back up everything</button><label class="btn ghost" style="cursor:pointer"><input type="file" accept=".json,application/json" id="s-restore" hidden>Restore from backup</label></div></div>
+    ${OFFLINE ? (() => { const g = gd(); return `<div class="card"><h2>Google Drive backup</h2>
+      <div class="mini"><span>Status</span><b>${!g.clientId ? "Not set up" : !g.connected ? "Not connected yet" : g.last ? "On, last backup " + fmtDateTime(g.last) : "On, waiting for the first backup"}</b></div>
+      <p class="note">Backs up everything to a “rngwillbake POS backups” folder in your Google Drive whenever the tablet is online (at most every two hours, one file per day, the last 30 days kept). The app can only see the files it creates there. Google needs a quick sign-in about once an hour of use; when it does, a “Back up to Drive” button appears at the top.</p>
+      <label class="field"><span>Google client ID (from your free Google Cloud project; see the README)</span><input id="s-gcid" value="${esc(g.clientId || "")}" placeholder="1234…apps.googleusercontent.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <div class="btn-row"><button class="btn ghost" data-act="gd-save">Save client ID</button>${g.clientId ? `<button class="btn banana" data-act="drive-backup">${g.connected ? "Back up to Drive now" : "Connect Google Drive"}</button>` : ""}${g.connected ? `<button class="btn ghost" data-act="gd-off" style="color:var(--bad)">Disconnect</button>` : ""}</div></div>`; })() : ""}
     <div class="card"><h2>About this app</h2>
       <p class="note">rngwillbake POS, version 1.0 (November 2026). ${S.mode === "cloud" ? "Running in the Claude app, synced to your account." : OFFLINE ? "Running as the offline app on this device: no internet, account or Claude usage needed." : "Running in device-only mode."} Keep regular backups; the backup file is also how your records move into the installable app.</p></div>
     <div class="card"><h2>About order slips</h2>
@@ -2035,8 +2042,7 @@ async function saveFile(name, data, mime){
     return true;
   } catch (e) { return false; }
 }
-async function makeBackup(){
-  toast("Preparing backup…");
+async function buildBackup(){
   const inline = async ref => {
     if (!ref || ref.kind !== "asset") return ref;
     try { const r = await fetch("/_blob/" + ref.id); if (!r.ok) return ref; return {kind: "data", src: await blobToDataURL(await r.blob())}; } catch (e) { return ref; }
@@ -2055,11 +2061,110 @@ async function makeBackup(){
   if (Array.isArray(settings.vendors)) settings.vendors = await Promise.all(settings.vendors.map(async v => v.logo ? Object.assign({}, v, {logo: await inline(v.logo)}) : v));
   for (const [k, o] of Object.entries(outOrders)) if (o.slip) outOrders[k] = Object.assign({}, o, {slip: await inline(o.slip)});
   delete settings.lastBackup;
+  if (settings.gdrive) settings.gdrive = {clientId: settings.gdrive.clientId || ""};
   const data = {app: "rngwillbake-pos", version: 1, made: Date.now(), products: S.products, orders: outOrders, closings: S.closings, settings, logs};
-  const ok = await saveFile(`rngwillbake-backup-${dayKey(Date.now())}.json`, JSON.stringify(data), "application/json");
+  return {json: JSON.stringify(data), orders: Object.keys(outOrders).length};
+}
+async function makeBackup(){
+  toast("Preparing backup…");
+  const {json, orders: nOrders} = await buildBackup();
+  const outOrders = {length: nOrders};
+  const ok = await saveFile(`rngwillbake-backup-${dayKey(Date.now())}.json`, json, "application/json");
   if (!ok) { toast("Couldn’t save the backup file on this device.", "bad"); return; }
   try { await put("settings", null, Object.assign({}, S.settings, {lastBackup: Date.now()})); } catch (e) {}
-  toast(`Backup saved: ${plural(Object.keys(outOrders).length, "order")}, ${plural(Object.keys(S.products).length, "item")}.`, "ok");
+  toast(`Backup saved: ${plural(nOrders, "order")}, ${plural(Object.keys(S.products).length, "item")}.`, "ok");
+}
+
+/* ---------- Google Drive auto-backup (offline app only; free Google project, drive.file scope) ---------- */
+const GD_SCOPE = "https://www.googleapis.com/auth/drive.file";
+const GD_API = "https://www.googleapis.com/drive/v3/files", GD_UP = "https://www.googleapis.com/upload/drive/v3/files";
+let gisLoading = null, gToken = null, gTokenExp = 0, driveBusy = false;
+const gd = () => cfg().gdrive || {};
+const gisReady = () => !!(window.google && google.accounts && google.accounts.oauth2);
+function loadGis(){
+  if (gisReady()) return Promise.resolve();
+  if (!gisLoading) gisLoading = new Promise((res, rej) => {
+    const sc = document.createElement("script"); sc.src = "https://accounts.google.com/gsi/client"; sc.async = true;
+    sc.onload = () => res(); sc.onerror = () => { gisLoading = null; rej(new Error("offline")); };
+    document.head.appendChild(sc);
+  });
+  return gisLoading;
+}
+async function saveGd(patch){ await put("settings", null, Object.assign({}, S.settings, {gdrive: Object.assign({}, gd(), patch)})); }
+const tokenValid = () => gToken && Date.now() < gTokenExp - 60000;
+/* Must be called straight from a tap: Google opens a sign-in window. */
+function driveSignIn(consent){
+  return new Promise((res, rej) => {
+    if (!gisReady()) { loadGis().catch(() => {}); rej(new Error("loading")); return; }
+    const tc = google.accounts.oauth2.initTokenClient({client_id: gd().clientId, scope: GD_SCOPE,
+      callback: r => { if (r && r.access_token) { gToken = r.access_token; gTokenExp = Date.now() + (Number(r.expires_in) || 3600) * 1000; res(gToken); } else rej(new Error((r && r.error) || "denied")); },
+      error_callback: e => rej(new Error((e && e.type) || "popup"))});
+    tc.requestAccessToken({prompt: consent ? "consent" : ""});
+  });
+}
+async function gfetch(url, opts){
+  const o = Object.assign({}, opts || {}); o.headers = Object.assign({Authorization: "Bearer " + gToken}, o.headers || {});
+  const r = await fetch(url, o);
+  if (r.status === 401) { gToken = null; throw new Error("auth"); }
+  if (!r.ok) throw new Error("http " + r.status);
+  return r;
+}
+async function driveFolder(){
+  const id = gd().folderId;
+  if (id) { try { const j = await (await gfetch(`${GD_API}/${id}?fields=id,trashed`)).json(); if (j && j.id && !j.trashed) return id; } catch (e) { if (e.message === "auth") throw e; } }
+  const j = await (await gfetch(`${GD_API}?fields=id`, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({name: "rngwillbake POS backups", mimeType: "application/vnd.google-apps.folder"})})).json();
+  await saveGd({folderId: j.id, files: {}});
+  return j.id;
+}
+async function driveUpload(name, json, folderId, fileId){
+  const init = await gfetch(fileId ? `${GD_UP}/${fileId}?uploadType=resumable&fields=id` : `${GD_UP}?uploadType=resumable&fields=id`, {
+    method: fileId ? "PATCH" : "POST", headers: {"Content-Type": "application/json; charset=UTF-8", "X-Upload-Content-Type": "application/json"},
+    body: JSON.stringify(fileId ? {} : {name, parents: [folderId], mimeType: "application/json"})});
+  const loc = init.headers.get("Location"); if (!loc) throw new Error("upload");
+  const up = await fetch(loc, {method: "PUT", headers: {"Content-Type": "application/json"}, body: json});
+  if (up.status === 404 && fileId) return driveUpload(name, json, folderId, null);
+  if (!up.ok) throw new Error("http " + up.status);
+  return (await up.json()).id;
+}
+function lastChange(){
+  let t = 0;
+  for (const o of Object.values(S.orders)) t = Math.max(t, o.createdAt || 0, o.fulfilledAt || 0, o.voidAt || 0, o.printedAt || 0);
+  for (const d of Object.values(S.logs)) for (const e of d.entries || []) t = Math.max(t, e.t || 0);
+  return t;
+}
+const driveOn = () => OFFLINE && !!gd().clientId && !!gd().connected;
+const driveDue = () => driveOn() && lastChange() > (gd().last || 0) && Date.now() - (gd().last || 0) > 2 * 36e5;
+async function driveBackup(fromTap){
+  if (!OFFLINE || !gd().clientId || driveBusy) return false;
+  if (!navigator.onLine) { if (fromTap) toast("No internet right now. The app will back up to Google Drive when it’s back online.", "bad"); return false; }
+  if (!tokenValid()) {
+    if (!fromTap) { if (!S.driveTap) { S.driveTap = true; renderChrome(); } return false; }
+    try { await driveSignIn(!gd().connected); }
+    catch (e) { toast(e.message === "loading" ? "Getting Google sign-in ready. Tap again in a moment." : "Google sign-in didn’t finish. Try again.", "bad"); return false; }
+  }
+  driveBusy = true; S.driveTap = false; renderChrome();
+  try {
+    const {json, orders} = await buildBackup();
+    const folder = await driveFolder(), day = dayKey(Date.now()), files = Object.assign({}, gd().files || {});
+    files[day] = await driveUpload(`rngwillbake-backup-${day}.json`, json, folder, files[day]);
+    const days = Object.keys(files).sort(), old = days.slice(0, Math.max(0, days.length - 30));
+    for (const k of old) { try { await gfetch(`${GD_API}/${files[k]}`, {method: "DELETE"}); } catch (e) {} delete files[k]; }
+    await saveGd({connected: true, files, last: Date.now()});
+    if (fromTap) toast(`Backed up to Google Drive (${plural(orders, "order")}).`, "ok");
+    return true;
+  } catch (e) {
+    if (e.message === "auth") { S.driveTap = true; if (fromTap) toast("Google asked to sign in again. Tap “Back up to Drive” once more.", "bad"); }
+    else if (fromTap) toast("Couldn’t back up to Google Drive just now. It will try again later.", "bad");
+    return false;
+  } finally { driveBusy = false; renderChrome(); }
+}
+function startDriveWatch(){
+  if (!OFFLINE) return;
+  if (gd().clientId && navigator.onLine) loadGis().catch(() => {});
+  const tick = () => { if (driveDue()) driveBackup(false); };
+  setInterval(tick, 5 * 6e4);
+  addEventListener("online", () => { if (gd().clientId) loadGis().catch(() => {}); setTimeout(tick, 3000); });
+  setTimeout(tick, 8000);
 }
 async function restoreBackup(file){
   let d;
@@ -2333,6 +2438,14 @@ $("#view").addEventListener("click", e => {
       break;
     }
     case "pin-set": openPinChange(); break;
+    case "drive-backup": driveBackup(true); break;
+    case "gd-save": {
+      const id = $("#s-gcid").value.trim();
+      if (id && !/\.apps\.googleusercontent\.com$/.test(id)) { toast("That doesn’t look like a Google client ID. It ends in .apps.googleusercontent.com.", "bad"); break; }
+      pinOk().then(ok => { if (ok) saveGd({clientId: id, connected: id && id === gd().clientId ? gd().connected : false}).then(() => { if (id) loadGis().catch(() => {}); toast(id ? "Client ID saved. Now tap Connect Google Drive." : "Google Drive backup turned off.", "ok"); logAdd([{type: "settings", note: id ? "Google Drive backup set up" : "Google Drive backup removed"}]); }).catch(() => {}); });
+      break;
+    }
+    case "gd-off": pinOk().then(ok => { if (!ok) return; try { if (gToken && gisReady()) google.accounts.oauth2.revoke(gToken, () => {}); } catch (e) {} gToken = null; saveGd({connected: false}).then(() => { toast("Google Drive disconnected."); logAdd([{type: "settings", note: "Google Drive backup disconnected"}]); }).catch(() => {}); }); break;
     case "tapmode": { const v = el.dataset.v; if (v === (tapToggles() ? "toggle" : "add")) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {tapMode: v})).then(() => logAdd([{type: "settings", note: `Second tap on an item: ${v === "toggle" ? "removes it" : "adds one more"}`}])).catch(() => {}); }); break; }
     case "refmode": { const v = el.dataset.v; if (v === refMode()) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {refMode: v})).then(() => logAdd([{type: "settings", note: `Reference number at checkout: ${v === "auto" ? "read from photo" : "typed"}`}])).catch(() => {}); }); break; }
     case "printcopies": { const v = el.dataset.v; if (v === printCopies()) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {printCopies: v})).then(() => logAdd([{type: "settings", note: `Print copies: ${v === "both" ? "merchant + customer" : v + " only"}`}])).catch(() => {}); }); break; }
@@ -2398,6 +2511,7 @@ $("#view").addEventListener("change", async e => {
 /* ---------- boot ---------- */
 async function startLocal(){
   await loadLocal(); S.mode = "local"; render();
+  startDriveWatch();
   try {
     const bc = new BroadcastChannel("rngwillbake-pos");
     bc.onmessage = e => { if (e.data === "hello") bc.postMessage("here"); if (!S.twoOpen) { S.twoOpen = true; renderChrome(); } };
