@@ -1,0 +1,8 @@
+Open-source parts used in rngwillbake POS (all free to use in your own app):
+
+- Tesseract.js 5.1.1 and tesseract.js-core 5.1.1: on-device text reading (OCR). Apache License 2.0.
+- Tesseract English language data (tessdata 4.0.0 best_int, via @tesseract.js-data/eng). Apache License 2.0.
+- qrcode-generator 1.4.4 by Kazuhiko Arase: Instagram QR codes on slips. MIT License.
+- Bricolage Grotesque font by The Bricolage Grotesque Project Authors. SIL Open Font License 1.1.
+
+The rest of the app (index.html, sw.js, manifest.webmanifest, icons) was made for rngwillbake.
