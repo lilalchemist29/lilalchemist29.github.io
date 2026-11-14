@@ -1,5 +1,5 @@
 /* rngwillbake POS offline app: caches every file so the app opens with no internet. */
-const CACHE = "rngwillbake-pos-417daa5776";
+const CACHE = "rngwillbake-pos-2e2b68df04";
 const FILES = [
  "./",
  "index.html",
