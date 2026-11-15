@@ -452,6 +452,20 @@ label:has(> input[type="file"]){position:relative}
 .opt-row .stepper-row .numfield.big{font-size:18px}
 .p-sizes{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;color:var(--muted);margin-top:2px}
 .p-sizes .low{color:var(--warn)}
+/* Pudding Bar (Stock tab) */
+.bar-card{display:flex;flex-direction:column;gap:14px}
+.bar-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.bar-top small{display:block;color:var(--muted);font-size:13px;font-weight:500}
+.bar-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.bar-part{display:flex;flex-direction:column;gap:8px}
+.bar-part h3{font-size:15px;font-weight:700}
+.bar-part > .btn{align-self:flex-start}
+.bar-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:8px 10px;background:var(--surface-2)}
+.bar-row .b-name{font-weight:650;min-width:0}
+.bar-row .p-stock{font-weight:750;font-size:18px;text-align:right;min-width:56px}
+.bar-row .p-stock small{display:block;font-size:12px;color:var(--muted);font-weight:500}
+.bar-row .acts{display:flex;gap:6px}
+@media (max-width: 860px){ .bar-cols{grid-template-columns:1fr} }
 .l-time small.l-by{display:block;font-size:11px;font-weight:700;color:var(--muted)}
 .l-time small.l-by.expeditor{color:var(--teal-strong)}
 details.changes summary{cursor:pointer;font-weight:650;color:var(--teal-strong);margin:4px 0}
@@ -828,6 +842,23 @@ const orderPaid = o => round2(orderPays(o).reduce((a, x) => a + (Number(x.amount
 const orderBalance = o => o.status === "void" ? 0 : Math.max(0, round2(o.total - orderPaid(o)));
 const payName = x => x.method === "cash" ? "Cash" : (x.qrLabel || "GoTyme");
 const lowAt = p => (p.lowAt == null || p.lowAt === "") ? 5 : Number(p.lowAt);
+/* Pudding Bar: one price per cup; the customer picks one base (kept as variants) and exactly one mix-in (kept as add-ons). Both count servings. */
+const isBar = p => !!p && p.kind === "bar";
+const BAR_BASES = ["Banana", "Creamy vanilla", "Matcha"], BAR_MIXINS = ["Classic", "Biscoff crunch", "Oreo crunch", "Choco chunk", "Strawberry compote"];
+const mixOf = (p, mid) => isBar(p) ? (p.addons || []).find(a => a.id === mid) || null : null;
+const lineMix = l => (l && l.addons && l.addons[0] && l.addons[0].id) || "";
+const mixInCart = (id, mid) => S.cart.filter(x => x.id === id && lineMix(x) === mid).reduce((a, l) => a + l.qty, 0);
+const mixTotal = p => (p.addons || []).reduce((a, x) => a + Math.max(0, Number(x.stock) || 0), 0);
+const barCups = p => Math.max(0, Math.min(stockOf(p), mixTotal(p)));
+const mixName = (p, a) => `${p.name} mix-in: ${a.label}`;
+/* Change a base's and a mix-in's servings together (sale, void) and return the new product plus History entries */
+function barAdjust(p, vid, mid, delta, type, ref, note){
+  const vs = (p.variants || []).map(x => Object.assign({}, x)), as = (p.addons || []).map(x => Object.assign({}, x)), moves = [];
+  const v = vs.find(x => x.id === vid), a = as.find(x => x.id === mid), extra = note ? {note} : {};
+  if (v) { const from = Number(v.stock) || 0; v.stock = from + delta; moves.push(Object.assign({type, pid: p.id, vid: v.id, name: itemLabel(p, v), from, to: v.stock, delta, ref}, extra)); }
+  if (a) { const from = Number(a.stock) || 0; a.stock = from + delta; moves.push(Object.assign({type, pid: p.id, vid: a.id, name: mixName(p, a), from, to: a.stock, delta, ref}, extra)); }
+  return {data: Object.assign({}, p, {variants: vs, addons: as, stock: vs.reduce((t, x) => t + (Number(x.stock) || 0), 0)}), moves};
+}
 const orderList = () => Object.values(S.orders).sort((a, b) => b.createdAt - a.createdAt);
 const paidIn = (from, to) => orderList().filter(o => o.status !== "void" && o.createdAt >= from && o.createdAt < to);
 function paysIn(from, to){ const r = []; orderList().forEach(o => { if (o.status === "void") return; orderPays(o).forEach(x => { const t = x.at || o.createdAt; if (t >= from && t < to) r.push(Object.assign({order: o}, x)); }); }); return r; }
@@ -1196,7 +1227,7 @@ function showStaffOffer(m){
 }
 
 /* ---------- iOS-style motion: sliding selection, swipes, sheets ---------- */
-/* Press and glide: press the selected tab or option, slide sideways, and the pill follows; lifting picks the option under the finger (same click as tapping it). Lifting outside the control cancels. */
+/* Press and glide: press the selected tab or option, slide sideways, and the pill follows; lifting picks the option under the finger (same click as tapping it). The pill keeps following within 40px around the control; lifting farther away cancels. */
 (function(){
   const OPTS = ":scope > button:not([disabled])";
   const isOn = b => b.getAttribute("aria-pressed") === "true" || b.getAttribute("aria-current") === "page";
@@ -1209,7 +1240,8 @@ function showStaffOffer(m){
   }
   function under(x, y){
     const c = g.ctl.getBoundingClientRect();
-    if (x < c.left || x > c.right || y < c.top || y > c.bottom) return null;
+    const M = 40;
+    if (x < c.left - M || x > c.right + M || y < c.top - M || y > c.bottom + M) return null;
     let best = null, bd = Infinity;
     g.ctl.querySelectorAll(OPTS).forEach(b => {
       const r = b.getBoundingClientRect(), dx = Math.max(r.left - x, 0, x - r.right), dy = Math.max(r.top - y, 0, y - r.bottom), d = dx * dx + dy * dy;
@@ -1343,6 +1375,14 @@ function viewSell(){
     l.addons = valid.map(a => ({id: a.id, label: a.label, price: Number(a.price) || 0}));
     l.price = round2((v ? Number(v.price) || 0 : Number(p.price) || 0) + l.addons.reduce((a, x) => a + x.price, 0));
     l.name = itemLabel(p, v, l.addons);
+    if (isBar(p)) {
+      l.addons = l.addons.slice(0, 1).map(a => Object.assign(a, {price: 0})); l.price = round2(Number(p.price) || 0); l.name = itemLabel(p, v, l.addons);
+      const mk = "mix|" + l.id + "|" + lineMix(l), a = mixOf(p, lineMix(l));
+      if (rem[k] == null) rem[k] = stockOf(p, l.vid || null);
+      if (rem[mk] == null) rem[mk] = a ? Number(a.stock) || 0 : 0;
+      l.qty = Math.min(l.qty, Math.max(0, rem[k]), Math.max(0, rem[mk])); rem[k] -= l.qty; rem[mk] -= l.qty;
+      return;
+    }
     if (rem[k] == null) rem[k] = stockOf(p, l.vid || null);
     l.qty = Math.min(l.qty, Math.max(0, rem[k])); rem[k] -= l.qty;
   });
@@ -1369,7 +1409,7 @@ function viewSell(){
 }
 const tapToggles = () => cfg().tapMode !== "add";
 function tileHTML(p){
-  const opt = hasOptions(p), stock = stockOf(p), c = inCart(p.id), avail = stock - c;
+  const opt = hasOptions(p), stock = isBar(p) ? barCups(p) : stockOf(p), c = inCart(p.id), avail = stock - c;
   const out = stock <= 0 && !c, full = !out && avail <= 0, low = !out && avail > 0 && avail <= lowAt(p);
   const label = out ? "Sold out" : full ? "All in this order" : low ? `Only ${avail} left` : `${avail} left`;
   const removable = c && tapToggles() && !opt;
@@ -1379,7 +1419,7 @@ function tileHTML(p){
     <span class="t-name">${esc(p.name)}</span>
     <span class="t-price num">${price}</span>
     ${hasVendors() && (p.vendor || HOUSE) !== HOUSE ? `<span class="t-seller" style="--v:${vendorColor(p.vendor)}"><i></i>${esc(vendorName(p.vendor))}</span>` : ""}
-    <span class="t-stock ${low || full ? "low" : ""}">${label}</span>${removable ? `<span class="t-hint">Tap again to remove</span>` : opt && !out && !full ? `<span class="t-hint">${hasVariants(p) ? "Choose size" : "Add-ons available"}</span>` : ""}</button>`;
+    <span class="t-stock ${low || full ? "low" : ""}">${label}</span>${removable ? `<span class="t-hint">Tap again to remove</span>` : opt && !out && !full ? `<span class="t-hint">${isBar(p) ? "Choose base & mix-in" : hasVariants(p) ? "Choose size" : "Add-ons available"}</span>` : ""}</button>`;
 }
 function ticketHTML(){
   const sum = cartSum(), total = sum.total, n = cartCount(), now = payNow();
@@ -1418,6 +1458,7 @@ function ticketHTML(){
 }
 function addToCart(id){
   const p = S.products[id]; if (!p) return;
+  if (isBar(p)) { openBarChooser(p); return; }
   if (hasOptions(p)) { openChooser(p); return; }
   const at = S.cart.findIndex(x => x.id === id);
   if (at >= 0 && tapToggles()) {
@@ -1467,8 +1508,42 @@ function openChooser(p){
     draw();
   }});
 }
+/* Pudding Bar: pick one base and one mix-in */
+function openBarChooser(p){
+  const bLeft = id => stockOf(p, id) - inCart(p.id, id), mLeft = id => (Number((mixOf(p, id) || {}).stock) || 0) - mixInCart(p.id, id);
+  let vid = ((p.variants || []).find(v => bLeft(v.id) > 0) || {}).id || null, mid = ((p.addons || []).find(a => mLeft(a.id) > 0) || {}).id || null, qty = 1;
+  const price = round2(Number(p.price) || 0);
+  const grid = (list, on, leftOf, key) => list.length ? `<div class="opt-grid">${list.map(x => { const lf = leftOf(x.id); return `<button type="button" class="opt ${x.id === on ? "on" : ""}" data-${key}="${esc(x.id)}" aria-pressed="${x.id === on}" ${lf <= 0 ? "disabled" : ""}><b>${esc(x.label)}</b><small>${lf <= 0 ? "Sold out" : lf + " left"}</small></button>`; }).join("")}</div>` : `<p class="note">None set up yet. Add them in Stock.</p>`;
+  openModal(mHead(esc(p.name)) + `<div class="m-body" id="ch"></div>`, {onMount(m){
+    const draw = () => {
+      const v = vid ? variantOf(p, vid) : null, a = mid ? mixOf(p, mid) : null;
+      const left = v && a ? Math.min(bLeft(vid), mLeft(mid)) : 0;
+      qty = Math.max(1, Math.min(qty, Math.max(1, left)));
+      $("#ch", m).innerHTML = `<p class="note">${peso(price)} per cup: one base and one mix-in.</p>
+        <div class="field"><span>1. Base</span>${grid(p.variants || [], vid, bLeft, "bb")}</div>
+        <div class="field"><span>2. Mix-in</span>${grid(p.addons || [], mid, mLeft, "mx")}</div>
+        <div class="field"><span>How many cups</span><div class="stepper-row"><button type="button" class="stepbtn" data-q="-1" aria-label="One less">−</button><div class="numfield big num" style="cursor:default"><b>${qty}</b></div><button type="button" class="stepbtn" data-q="1" aria-label="One more">+</button></div></div>
+        <button class="btn banana big" id="ch-add" ${left <= 0 ? "disabled" : ""}>${v && a && left > 0 ? `Add ${qty} · ${esc(v.label)} + ${esc(a.label)} · ${peso(price * qty)}` : "Choose a base and a mix-in"}</button>`;
+      $("#ch-add", m).onclick = () => {
+        if (!(v && a) || left <= 0) return;
+        const addons = [{id: a.id, label: a.label, price: 0}];
+        const line = {id: p.id, vid, addons, qty, price, name: itemLabel(p, v, addons)};
+        const same = S.cart.find(x => lineKey(x) === lineKey(line));
+        if (same) same.qty += qty; else S.cart.push(line);
+        closeModal(); render();
+      };
+    };
+    m.addEventListener("click", e => {
+      const b = e.target.closest("[data-bb]"); if (b && !b.disabled) { vid = b.dataset.bb; draw(); }
+      const x = e.target.closest("[data-mx]"); if (x && !x.disabled) { mid = x.dataset.mx; draw(); }
+      const q = e.target.closest("[data-q]"); if (q) { qty += Number(q.dataset.q); draw(); }
+    });
+    draw();
+  }});
+}
 function changeQty(key, d){
   const l = S.cart.find(x => lineKey(x) === key); if (!l) return;
+  if (d > 0 && isBar(S.products[l.id])) { const a = mixOf(S.products[l.id], lineMix(l)); if (!a || mixInCart(l.id, a.id) >= (Number(a.stock) || 0)) { toast(`No more ${a ? a.label : "of that mix-in"} left.`, "bad"); return; } }
   if (d > 0) { const p = S.products[l.id]; if (p && inCart(l.id, hasVariants(p) ? l.vid : undefined) >= stockOf(p, l.vid || null)) { toast(`No more ${p.name}${l.vid ? " (" + (variantOf(p, l.vid) || {}).label + ")" : ""} in stock.`, "bad"); return; } }
   l.qty += d;
   if (l.qty <= 0) S.cart = S.cart.filter(x => x !== l);
@@ -1892,6 +1967,12 @@ async function finalize(pay){
     const [pid, vid] = k.split("|"), p = S.products[pid];
     if (p && stockOf(p, vid || null) < need[k]) { toast(`Only ${stockOf(p, vid || null)} ${itemLabel(p, vid ? variantOf(p, vid) : null)} left. Adjust the order first.`, "bad"); return false; }
   }
+  const needMix = {};
+  items.forEach(it => { if (isBar(S.products[it.pid])) { const k = it.pid + "|" + lineMix(it); needMix[k] = (needMix[k] || 0) + it.qty; } });
+  for (const k in needMix) {
+    const [pid, mid] = k.split("|"), a = mixOf(S.products[pid], mid), have = a ? Number(a.stock) || 0 : 0;
+    if (have < needMix[k]) { toast(`Only ${have} ${a ? a.label : "of that mix-in"} left. Adjust the order first.`, "bad"); return false; }
+  }
   const now = Date.now(), id = newId("o"), amount = pay.amount != null ? round2(pay.amount) : sum.total;
   const pre = S.pre.on ? {pickupAt: pickupTs()} : null;
   const payment = {amount, method: pay.method, at: now, kind: pre && amount < sum.total ? "deposit" : "full",
@@ -1909,6 +1990,11 @@ async function finalize(pay){
     items.forEach(it => { (byProd[it.pid] = byProd[it.pid] || []).push(it); });
     for (const pid in byProd) {
       const p = S.products[pid]; if (!p) continue;
+      if (isBar(p)) {
+        let cur = p;
+        for (const it of byProd[pid]) { const r = barAdjust(cur, it.vid, lineMix(it), -it.qty, "sale", order.no); cur = r.data; moves.push(...r.moves); }
+        await put("products", pid, cur); continue;
+      }
       if (hasVariants(p)) {
         const vs = p.variants.map(v => Object.assign({}, v));
         byProd[pid].forEach(it => { const v = vs.find(x => x.id === it.vid); if (!v) return; const from = Number(v.stock) || 0; v.stock = from - it.qty; moves.push({type: "sale", pid, vid: v.id, name: itemLabel(p, v), from, to: v.stock, delta: -it.qty, ref: order.no}); });
@@ -2414,6 +2500,7 @@ function openVoid(o){
           const moves = [];
           for (const it of o.items) {
             const p = S.products[it.pid]; if (!p) continue;
+            if (isBar(p)) { const r = barAdjust(p, it.vid, lineMix(it), it.qty, "void", o.no, why.value.trim()); await put("products", p.id, r.data); moves.push(...r.moves); continue; }
             if (hasVariants(p) && it.vid && variantOf(p, it.vid)) {
               const vv = p.variants.map(x => Object.assign({}, x)), v = vv.find(x => x.id === it.vid), from = Number(v.stock) || 0;
               v.stock = from + it.qty;
@@ -2518,6 +2605,7 @@ function viewDash(){
 
   const watch = [];
   productList().filter(p => (VF === "all" || (p.vendor || HOUSE) === VF) && p.active !== false).forEach(p => {
+    if (isBar(p)) (p.addons || []).forEach(a => { const st = Number(a.stock) || 0; if (st <= lowAt(p)) watch.push({name: mixName(p, a), st}); });
     if (hasVariants(p)) p.variants.forEach(v => { const st = Number(v.stock) || 0; if (st <= lowAt(p)) watch.push({name: itemLabel(p, v), st}); });
     else { const st = Number(p.stock) || 0; if (st <= lowAt(p)) watch.push({name: p.name, st}); }
   });
@@ -2594,7 +2682,7 @@ function openCloseDay(){
 /* Stock */
 const expCanRestock = () => S.role === "expeditor" && cfg().expRestock !== false;
 function viewStock(){
-  const list = productList(), exp = S.role === "expeditor";
+  const all = productList(), list = all.filter(p => !isBar(p)), bars = all.filter(isBar), exp = S.role === "expeditor";
   const groups = {};
   list.forEach(p => { const c = p.category || "Other"; (groups[c] = groups[c] || []).push(p); });
   const stockCell = st => `<span class="p-stock num ${st <= 0 ? "diff-bad" : ""}">${st}<small>in stock</small></span>`;
@@ -2609,7 +2697,102 @@ function viewStock(){
     }).join("")}</div>`).join("")
     : `<div class="empty"><p>${exp ? "No items yet. The admin adds items to the menu." : "Your menu is empty. Add your first item, like banana pudding or a box of crinkles."}</p>${exp ? "" : `<button class="btn ink" data-act="new-item">Add item</button>`}</div>`;
   return `<section class="page"><div class="page-head"><h1>${exp ? "Stock" : "Stock & menu"}</h1>${exp ? "" : `<button class="btn ink" data-act="new-item">Add item</button>`}</div>
-    ${exp ? `<p class="summary">Use Restock after baking. Every restock is recorded in History with your role, for the admin to review.</p>` : ""}${body}</section>`;
+    ${exp ? `<p class="summary">Use Restock after baking. Every restock is recorded in History with your role, for the admin to review.</p>` : ""}${body}${barSection(bars, exp)}</section>`;
+}
+/* Stock tab: the Pudding Bar with its bases and mix-ins */
+function barSection(bars, exp){
+  const title = n => `<div class="cat-title" style="--c:${catColor("Pudding Bar")}"><i></i>${esc(n)}</div>`;
+  if (!bars.length) return exp ? "" : title("Pudding Bar") + `<div class="card bar-card"><p class="note">Let customers build their own cup: one base and one mix-in, for one price per cup. It starts with ${BAR_BASES.join(", ")} as bases and ${BAR_MIXINS.join(", ")} as mix-ins, each with its own servings count. You can add more anytime.</p><div><button class="btn ink" data-act="bar-new">Set up the Pudding Bar</button></div></div>`;
+  return bars.map(p => {
+    const row = (o, kind) => { const st = Number(o.stock) || 0, low = st > 0 && st <= lowAt(p);
+      return `<div class="bar-row"><span class="b-name">${esc(o.label)}</span><span class="p-stock num ${st <= 0 ? "diff-bad" : ""}" style="${low ? "color:var(--warn)" : ""}">${st}<small>servings</small></span><span class="acts"><button class="btn banana sm" data-act="bar-restock" data-id="${esc(p.id)}" data-o="${esc(o.id)}">Restock</button>${exp ? "" : `<button class="btn ghost sm" data-act="bar-opt" data-id="${esc(p.id)}" data-k="${kind}" data-o="${esc(o.id)}">Edit</button>`}</span></div>`; };
+    const part = (head, list, kind, add) => `<div class="bar-part"><h3>${head}</h3>${list.length ? list.map(o => row(o, kind)).join("") : `<p class="note">None yet.</p>`}${exp ? "" : `<button class="btn ghost sm" data-act="bar-opt" data-id="${esc(p.id)}" data-k="${kind}">${add}</button>`}</div>`;
+    return title(p.name) + `<div class="card bar-card">
+      <div class="bar-top"><span><b class="num">${peso(p.price)}</b> per cup${p.active === false ? ` <span class="pill hidden">Hidden</span>` : ""}<small>Enough for ${plural(barCups(p), "cup")} right now${hasVendors() ? `, sold by ${esc(vendorName(p.vendor))}` : ""}</small></span>${exp ? "" : `<button class="btn ghost sm" data-act="bar-edit" data-id="${esc(p.id)}">Edit</button>`}</div>
+      <div class="bar-cols">${part("Bases", p.variants || [], "base", "Add a base")}${part("Mix-ins", p.addons || [], "mix", "Add a mix-in")}</div></div>`;
+  }).join("");
+}
+/* Set up or edit the Pudding Bar itself: name, cup price, low-stock warning, shown on Sell */
+function openBarEdit(p){
+  const isNew = !p;
+  const D = {name: p ? p.name : "Pudding Bar", price: p ? p.price : "", low: p ? lowAt(p) : 5, active: p ? p.active !== false : true, vendor: p ? p.vendor : HOUSE};
+  openModal(mHead(isNew ? "Set up the Pudding Bar" : "Edit " + esc(p.name)) + `<div class="m-body">
+    <label class="field"><span>Name on the Sell screen</span><input id="bn" value="${esc(D.name)}" placeholder="e.g. Pudding Bar"></label>
+    ${hasVendors() ? `<label class="field"><span>Sold by</span><select id="bv" style="border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;font-size:16px;color:var(--ink)">${vendorList().map(v => `<option value="${esc(v.id)}" ${(D.vendor || HOUSE) === v.id ? "selected" : ""}>${esc(v.name)}${v.house ? " (you)" : ""}</option>`).join("")}</select></label>` : ""}
+    <div class="field"><span>Price per cup (any base, one mix-in)</span>${numField("price", {prefix: "₱", decimals: true, value: D.price, label: "Price per cup"})}</div>
+    <p class="hint">Tap the price box, then use the keypad.</p>
+    ${padHTML()}
+    <div class="field"><span>Warn me when a base or mix-in drops to</span>${stepField("low", D.low, "Low stock warning")}</div>
+    <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="ba" ${D.active ? "checked" : ""}><span>Show on the Sell screen</span></label>
+    ${isNew ? `<p class="note">It starts with ${BAR_BASES.join(", ")} as bases and ${BAR_MIXINS.join(", ")} as mix-ins, all at 0 servings. Restock each one before selling.</p>` : ""}
+    <button class="btn ink big" id="save">${isNew ? "Set up Pudding Bar" : "Save changes"}</button>
+    ${isNew ? "" : `<button class="btn ghost" id="del" style="color:var(--bad)">Delete the Pudding Bar</button>`}
+  </div>`, {onMount(m){
+    const pad = attachPad(m), vals = {low: D.low};
+    bindSteppers(m, vals);
+    $("#save", m).onclick = async () => {
+      const name = $("#bn", m).value.trim(), price = pad.raw("price") === "" ? "" : round2(pad.num("price"));
+      if (!name) { toast("Give it a name.", "bad"); return; }
+      if (price === "") { toast("Enter the price per cup.", "bad"); pad.focus("price"); return; }
+      if (!(await pinOk())) return;
+      const old = p ? (S.products[p.id] || p) : null, id = old ? old.id : newId("p");
+      const variants = old ? (old.variants || []).map(v => Object.assign({}, v, {price})) : BAR_BASES.map(l => ({id: newId("v"), label: l, price, stock: 0}));
+      const addons = old ? (old.addons || []).map(a => Object.assign({}, a)) : BAR_MIXINS.map(l => ({id: newId("m"), label: l, price: 0, stock: 0}));
+      const data = Object.assign({}, old || {}, {id, kind: "bar", name, category: "Pudding Bar", price, lowAt: vals.low, active: $("#ba", m).checked, sort: (old && old.sort) || Date.now(),
+        vendor: $("#bv", m) ? $("#bv", m).value : (D.vendor || HOUSE), variants, addons, stock: variants.reduce((t, v) => t + (Number(v.stock) || 0), 0)});
+      const logs = old ? itemChanges(old, Object.assign({}, data, {variants: old.variants, addons: old.addons})) : [{type: "added", pid: id, name, from: 0, to: 0, delta: 0, note: `New Pudding Bar at ${peso(price)} per cup`}];
+      try { await put("products", id, data); await logAdd(logs); closeModal(); toast(isNew ? "Pudding Bar is set up. Restock the bases and mix-ins to start selling." : "Pudding Bar saved.", "ok"); } catch (e) {}
+    };
+    const del = $("#del", m);
+    if (del) { let armed = false; del.onclick = async () => {
+      if (!armed) { armed = true; del.textContent = "Tap again to delete for good"; return; }
+      if (!(await pinOk())) return;
+      const gone = S.products[p.id] || p; S.cart = S.cart.filter(l => l.id !== p.id); await removeDoc("products", p.id); await logAdd([{type: "deleted", pid: p.id, name: gone.name, from: stockOf(gone), to: 0, delta: -stockOf(gone)}]); closeModal(); toast("Pudding Bar deleted.");
+    }; }
+  }});
+}
+/* Add or edit one base or mix-in: name and servings */
+function openBarOpt(p, kind, oid){
+  if (!p) return;
+  const isMix = kind === "mix", key = isMix ? "addons" : "variants", word = isMix ? "mix-in" : "base";
+  const o = oid ? (p[key] || []).find(x => x.id === oid) : null, isNew = !o;
+  openModal(mHead(isNew ? `Add a ${word}` : `Edit ${esc(o.label)}`) + `<div class="m-body">
+    <label class="field"><span>${isMix ? "Mix-in" : "Base"} name</span><input id="on" value="${esc(o ? o.label : "")}" placeholder="${isMix ? "e.g. Ube crumble" : "e.g. Ube"}" ${isNew ? "autofocus" : ""}></label>
+    <div class="field"><span>Servings in stock</span>${stepField("st", o ? Number(o.stock) || 0 : 0, "Servings in stock")}</div>
+    <button class="btn ink big" id="save">${isNew ? `Add ${word}` : "Save changes"}</button>
+    ${isNew ? "" : `<button class="btn ghost" id="del" style="color:var(--bad)">Remove this ${word}</button>`}
+  </div>`, {onMount(m){
+    const vals = {st: o ? Number(o.stock) || 0 : 0};
+    bindSteppers(m, vals);
+    const nameOf = (pp, x) => isMix ? mixName(pp, x) : itemLabel(pp, x);
+    $("#save", m).onclick = async () => {
+      const label = $("#on", m).value.trim(), cur = S.products[p.id] || p, list = (cur[key] || []).map(x => Object.assign({}, x));
+      if (!label) { toast(`Give the ${word} a name.`, "bad"); return; }
+      const dup = list.find(x => x.id !== oid && x.label.toLowerCase() === label.toLowerCase()); if (dup) { toast(`There’s already a ${word} called ${dup.label}.`, "bad"); return; }
+      if (!(await pinOk())) return;
+      const logs = [];
+      let it = oid ? list.find(x => x.id === oid) : null;
+      if (!it) { it = isMix ? {id: newId("m"), label, price: 0, stock: vals.st} : {id: newId("v"), label, price: round2(Number(cur.price) || 0), stock: vals.st}; list.push(it); logs.push({type: "item", pid: cur.id, name: cur.name, note: `${isMix ? "Mix-in" : "Base"} added: ${label}`}); if (vals.st) logs.push({type: "adjust", pid: cur.id, vid: it.id, name: nameOf(cur, it), from: 0, to: vals.st, delta: vals.st}); }
+      else {
+        const from = Number(it.stock) || 0;
+        if (it.label !== label) logs.push({type: "item", pid: cur.id, name: cur.name, note: `${isMix ? "Mix-in" : "Base"} renamed: ${it.label} → ${label}`});
+        it.label = label; it.stock = vals.st;
+        if (from !== vals.st) logs.push({type: "adjust", pid: cur.id, vid: it.id, name: nameOf(cur, it), from, to: vals.st, delta: vals.st - from});
+      }
+      const data = Object.assign({}, cur, {[key]: list}); data.stock = (data.variants || []).reduce((t, v) => t + (Number(v.stock) || 0), 0);
+      try { await put("products", cur.id, data); if (logs.length) await logAdd(logs); closeModal(); toast(isNew ? `${label} added.` : `${label} saved.`, "ok"); } catch (e) {}
+    };
+    const del = $("#del", m);
+    if (del) { let armed = false; del.onclick = async () => {
+      if (!armed) { armed = true; del.textContent = "Tap again to remove"; return; }
+      if (!(await pinOk())) return;
+      const cur = S.products[p.id] || p, gone = (cur[key] || []).find(x => x.id === oid); if (!gone) { closeModal(); return; }
+      const data = Object.assign({}, cur, {[key]: (cur[key] || []).filter(x => x.id !== oid)}); data.stock = (data.variants || []).reduce((t, v) => t + (Number(v.stock) || 0), 0);
+      const left = Number(gone.stock) || 0, logs = [{type: "item", pid: cur.id, name: cur.name, note: `${isMix ? "Mix-in" : "Base"} removed: ${gone.label}`}];
+      if (left) logs.push({type: "adjust", pid: cur.id, vid: gone.id, name: nameOf(cur, gone), from: left, to: 0, delta: -left});
+      try { await put("products", cur.id, data); await logAdd(logs); closeModal(); toast(`${gone.label} removed.`); } catch (e) {}
+    }; }
+  }});
 }
 function openProduct(p, draft){
   const isNew = !p || !p.id;
@@ -2682,12 +2865,12 @@ function openProduct(p, draft){
     }});
 }
 function openRestock(p, vidIn){
-  const vs = hasVariants(p), vid = vs ? (vidIn && variantOf(p, vidIn) ? vidIn : p.variants[0].id) : null, v = vs ? variantOf(p, vid) : null;
-  const cur = vs ? Number(v.stock) || 0 : Number(p.stock) || 0;
-  openModal(mHead("Restock " + esc(p.name)) + `<div class="m-body">
-    ${vs ? `<div class="field"><span>Which size?</span><div class="seg" role="group" aria-label="Size">${p.variants.map(x => `<button data-rv="${esc(x.id)}" aria-pressed="${x.id === vid}">${esc(x.label)} (${Number(x.stock) || 0})</button>`).join("")}</div></div>` : ""}
+  const mx = isBar(p) ? mixOf(p, vidIn) : null, vs = !mx && hasVariants(p), vid = vs ? (vidIn && variantOf(p, vidIn) ? vidIn : p.variants[0].id) : null, v = vs ? variantOf(p, vid) : mx;
+  const cur = vs || mx ? Number(v.stock) || 0 : Number(p.stock) || 0;
+  openModal(mHead("Restock " + esc(isBar(p) && v ? v.label : p.name)) + `<div class="m-body">
+    ${vs && !isBar(p) ? `<div class="field"><span>Which size?</span><div class="seg" role="group" aria-label="Size">${p.variants.map(x => `<button data-rv="${esc(x.id)}" aria-pressed="${x.id === vid}">${esc(x.label)} (${Number(x.stock) || 0})</button>`).join("")}</div></div>` : ""}
     <div class="due"><span>Now in stock${v ? " (" + esc(v.label) + ")" : ""}</span><strong class="num">${cur}</strong></div>
-    <div class="field"><span>How many did you bake? Slide, or tap the number to type it.</span>
+    <div class="field"><span>${isBar(p) ? "How many servings did you make?" : "How many did you bake?"} Slide, or tap the number to type it.</span>
       <div class="stepper-row"><button type="button" class="stepbtn" data-step="-1" aria-label="One less">−</button>${numField("qty", {big: true, label: "Quantity"})}<button type="button" class="stepbtn" data-step="1" aria-label="One more">+</button></div>
     </div>
     <input type="range" class="slider" id="slider" min="0" max="60" step="1" value="0" aria-label="Slide to choose a quantity">
@@ -2726,10 +2909,11 @@ function openRestock(p, vidIn){
         if (!expCanRestock() && !(await pinOk())) return;
         const p2 = S.products[p.id] || p;
         let data;
-        if (vs) { const vv = p2.variants.map(x => x.id === vid ? Object.assign({}, x, {stock: n}) : Object.assign({}, x)); data = Object.assign({}, p2, {variants: vv, stock: vv.reduce((a, x) => a + (Number(x.stock) || 0), 0), restockedAt: Date.now()}); }
+        if (mx) { const aa = (p2.addons || []).map(x => x.id === mx.id ? Object.assign({}, x, {stock: n}) : Object.assign({}, x)); data = Object.assign({}, p2, {addons: aa, restockedAt: Date.now()}); }
+        else if (vs) { const vv = p2.variants.map(x => x.id === vid ? Object.assign({}, x, {stock: n}) : Object.assign({}, x)); data = Object.assign({}, p2, {variants: vv, stock: vv.reduce((a, x) => a + (Number(x.stock) || 0), 0), restockedAt: Date.now()}); }
         else data = Object.assign({}, p2, {stock: n, restockedAt: Date.now()});
-        const nm = itemLabel(p2, v);
-        try { await put("products", p.id, data); await logAdd([{type: "restock", pid: p.id, vid: vid || undefined, name: nm, from: cur, to: n, delta: n - cur}]); closeModal(); toast(`${nm}: ${n} in stock.`, "ok"); } catch (e) {}
+        const nm = mx ? mixName(p2, mx) : itemLabel(p2, v);
+        try { await put("products", p.id, data); await logAdd([{type: "restock", pid: p.id, vid: vid || (mx && mx.id) || undefined, name: nm, from: cur, to: n, delta: n - cur}]); closeModal(); toast(`${nm}: ${n} in stock.`, "ok"); } catch (e) {}
       };
     }});
 }
@@ -2795,9 +2979,11 @@ function viewSettings(){
       <div class="btn-row"><button class="btn banana" data-act="backup">Back up everything</button><label class="btn ghost" style="cursor:pointer"><input type="file" accept=".json,application/json" id="s-restore" hidden>Restore from backup</label></div></div>
     ${OFFLINE ? (() => { const g = gd(); return `<div class="card"><h2>Google Drive backup</h2>
       <div class="mini"><span>Status</span><b>${!g.clientId ? "Not set up" : !g.connected ? "Not connected yet" : g.last ? "On, last backup " + fmtDateTime(g.last) : "On, waiting for the first backup"}</b></div>
+      ${g.clientId && g.fail && g.fail.t > (g.last || 0) ? `<div class="mini"><span>Last try</span><b style="color:var(--bad)">Didn’t work, ${fmtDateTime(g.fail.t)}</b></div><p class="note" style="color:var(--bad);margin:6px 0 10px">${esc(g.fail.msg)}</p>` : ""}
+      ${g.clientId && g.check ? `<div class="mini"><span>Last check</span><b style="color:${g.check.ok ? "var(--ok)" : "var(--bad)"}">${g.check.ok ? "Working" : "Not working"}, ${fmtDateTime(g.check.t)}</b></div><p class="note" style="margin:6px 0 10px">${esc(g.check.msg)}</p>` : ""}
       <p class="note">Backs up everything to a “rngwillbake POS backups” folder in your Google Drive whenever the tablet is online (at most every two hours, one file per day, the last 30 days kept). The app can only see the files it creates there. Google needs a quick sign-in about once an hour of use; when it does, a “Back up to Drive” button appears at the top.</p>
       <label class="field"><span>Google client ID (from your free Google Cloud project; see the README)</span><input id="s-gcid" value="${esc(g.clientId || "")}" placeholder="1234…apps.googleusercontent.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-      <div class="btn-row"><button class="btn ghost" data-act="gd-save">Save client ID</button>${g.clientId ? `<button class="btn banana" data-act="drive-backup">${g.connected ? "Back up to Drive now" : "Connect Google Drive"}</button>` : ""}${g.connected ? `<button class="btn ghost" data-act="gd-off" style="color:var(--bad)">Disconnect</button>` : ""}</div></div>`; })() : ""}
+      <div class="btn-row"><button class="btn ghost" data-act="gd-save">Save client ID</button>${g.clientId ? `<button class="btn banana" data-act="drive-backup">${g.connected ? "Back up to Drive now" : "Connect Google Drive"}</button>` : ""}${g.clientId ? `<button class="btn ghost" data-act="gd-check">Check connection</button>` : ""}${g.connected ? `<button class="btn ghost" data-act="gd-off" style="color:var(--bad)">Disconnect</button>` : ""}</div></div>`; })() : ""}
     <div class="card"><h2>About this app</h2>
       <div class="mini"><span>Version</span><b>${APP_VERSION}</b></div>
       <details class="changes"><summary>What’s new in each version</summary>${CHANGES.map(([v, d, items]) => `<div class="chg"><b>${v}</b> <small>${d}</small><ul>${items.map(x => `<li>${x}</li>`).join("")}</ul></div>`).join("")}</details>
@@ -2820,7 +3006,7 @@ async function exportCSV(kind){
     os.forEach(o => rows.push([o.no, o.day, fmtTime(o.createdAt), o.customer, o.note, o.items.map(i => i.qty + " x " + i.name).join("; "), o.gross != null ? o.gross : o.total, o.discount || 0, o.fee || 0, o.total, orderPaid(o), orderBalance(o), payNames(o), orderPays(o).map(x => x.qrRef).filter(Boolean).join("; "), o.preorder ? fmtPickup(o.preorder.pickupAt) : "", o.status, o.fulfilledAt ? fmtDateTime(o.fulfilledAt) : "", o.voidReason]));
     name = "orders-" + dayKey(Date.now()) + ".csv";
   } else {
-    rows = [["Order no", "Date", "Item", "Size", "Add-ons", "Category", "Seller", "Qty", "Unit price", "Line total", "Line discount", "Net after all discounts", "Payment", "Status"]];
+    rows = [["Order no", "Date", "Item", "Size or base", "Add-ons or mix-in", "Category", "Seller", "Qty", "Unit price", "Line total", "Line discount", "Net after all discounts", "Payment", "Status"]];
     os.forEach(o => o.items.forEach(i => rows.push([o.no, o.day, (S.products[i.pid] || {}).name || i.name, i.vlabel || "", (i.addons || []).map(a => a.label).join("; "), (S.products[i.pid] || {}).category || "", i.vendorName || vendorName(i.vendor), i.qty, i.price, lineGross(i), lineDisc(i), itemNet(o, i), payNames(o), o.status])));
     name = "items-sold-" + dayKey(Date.now()) + ".csv";
   }
@@ -2974,9 +3160,56 @@ async function driveBackup(fromTap){
     return true;
   } catch (e) {
     if (e.message === "auth") { S.driveTap = true; if (fromTap) toast("Google asked to sign in again. Tap “Back up to Drive” once more.", "bad"); }
-    else if (fromTap) toast("Couldn’t back up to Google Drive just now. It will try again later.", "bad");
+    else { driveFail(e); if (fromTap) toast("Couldn’t back up to Google Drive just now. It will try again later.", "bad"); }
     return false;
   } finally { driveBusy = false; renderChrome(); }
+}
+/* Remember why a Drive backup failed, so Settings can show it (sign-in expiring each hour is normal and isn't recorded) */
+function driveFail(e){
+  const m = String((e && e.message) || "");
+  const msg = m === "http 403" ? "Google Drive refused access (error 403). The Drive API may be turned off in your Google Cloud project. Tap “Check connection” for details."
+    : /^http 5/.test(m) ? "Google Drive had a problem on its side. The app will try again later."
+    : /^http /.test(m) ? `Google Drive answered with error ${m.slice(5)}. Tap “Check connection” for details.`
+    : "Couldn’t reach Google Drive (the internet dropped or is blocked). The app will try again later.";
+  const f = gd().fail; if (f && f.msg === msg && Date.now() - f.t < 36e5) return;
+  saveGd({fail: {t: Date.now(), msg}}).catch(() => {});
+}
+/* Settings → Check connection: internet, Google sign-in with the saved client ID, then Google Drive itself. Runs from a tap because Google may open a sign-in window. */
+const GD_FIX = () => `In Google Cloud Console → APIs & Services → Credentials, make sure the OAuth client still exists and ${location.origin} is listed under Authorized JavaScript origins. If the client is gone, create a new one and paste its ID here.`;
+async function driveCheck(){
+  if (!OFFLINE || !gd().clientId || driveBusy) return;
+  const done = (ok, msg) => { saveGd({check: {t: Date.now(), ok, msg}}).catch(() => {}); toast(ok ? "Google Drive backup is working." : "Google Drive check failed. See the details in Settings.", ok ? "ok" : "bad"); };
+  if (!navigator.onLine) return done(false, "No internet on this tablet. Connect to Wi-Fi or mobile data, then check again.");
+  if (!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(gd().clientId.trim())) return done(false, "The saved client ID doesn’t look right: it should end in .apps.googleusercontent.com. Copy it again from Google Cloud Console.");
+  if (!gisReady()) {
+    toast("Getting Google sign-in ready…");
+    loadGis().then(() => toast("Google sign-in is ready. Tap “Check connection” again.")).catch(() => done(false, "Couldn’t load Google sign-in (accounts.google.com). The internet may be down or blocking it; try another network."));
+    return;
+  }
+  if (!tokenValid()) {
+    try { await driveSignIn(!gd().connected); }
+    catch (e) {
+      const m = e.message;
+      return done(false, m === "popup_failed_to_open" ? "The browser blocked Google’s sign-in window. Allow pop-ups for this app, then check again."
+        : m === "access_denied" ? "Google access wasn’t allowed. Check again and choose Allow."
+        : "Google sign-in didn’t finish. If Google showed an error such as invalid_client, deleted_client or origin_mismatch, the client ID needs fixing. " + GD_FIX());
+    }
+  }
+  driveBusy = true;
+  try {
+    const id = gd().folderId;
+    const r = await fetch(id ? `${GD_API}/${id}?fields=id,trashed` : `${GD_API}?pageSize=1&fields=files(id)`, {headers: {Authorization: "Bearer " + gToken}});
+    if (r.status === 401) { gToken = null; return done(false, "Google signed this tablet out during the check. Tap “Check connection” again."); }
+    if (r.status === 403) {
+      let why = ""; try { why = await r.text(); } catch (e) {}
+      return done(false, /accessNotConfigured|SERVICE_DISABLED|has not been used|is disabled/i.test(why) ? "Sign-in works, but the Google Drive API is turned off in your Google Cloud project. Turn on “Google Drive API” under APIs & Services → Library, then check again." : "Sign-in works, but Google Drive refused access (error 403). Try Disconnect, then Connect Google Drive again.");
+    }
+    if (id && r.status === 404) return done(true, "Signed in and reached Google Drive. The backup folder was deleted; the next backup will make a new one.");
+    if (!r.ok) return done(false, `Signed in, but Google Drive answered with error ${r.status}. Try again in a few minutes.`);
+    const j = id ? await r.json() : null;
+    done(true, j && j.trashed ? "Signed in and reached Google Drive. The backup folder is in the Drive trash; the next backup will make a new one." : "Signed in with your client ID and reached Google Drive.");
+  } catch (e) { done(false, "Signed in, but couldn’t reach Google Drive. Check the internet, then try again."); }
+  finally { driveBusy = false; }
 }
 function startDriveWatch(){
   if (!OFFLINE) return;
@@ -3117,8 +3350,10 @@ async function removeSeller(id){
 }
 
 /* ---------- app revisions ---------- */
-const APP_VERSION = "1.8.1 (November 2026)";
+const APP_VERSION = "1.9 (November 2026)";
 const CHANGES = [
+  ["1.9", "Nov 2026", ["New Pudding Bar: customers pick a base and one mix-in, one price per cup", "Bases and mix-ins each keep their own servings count; add, edit and restock them in Stock → Pudding Bar"]],
+  ["1.8.2", "Nov 2026", ["Gliding across tabs and options is more forgiving near the edges", "Google Drive: “Check connection” button, and Settings shows why a backup didn’t work"]],
   ["1.8.1", "Nov 2026", ["Press and slide across tabs and options to pick one"]],
   ["1.8", "Nov 2026", ["“Lock / Switch” button with a clear confirm; no PIN-free way back after locking", "Log-in screen named “RWB Sales & Orders System” (editable)", "iOS-style touches: on/off switches, sliding selection, glass header, swipe a line to remove it, bottom sheets on phones"]],
   ["1.7", "Nov 2026", ["Pre-orders with pickup date and deposits; collect the balance at pickup", "Discounts on an item or the whole order, in pesos or percent", "Delivery fee line, kept separate from sales", "Item options: sizes with their own price and stock, plus add-ons", "End-of-day report you can print", "Printer test page", "Expeditors can restock and close the day; History shows who made each change"]],
@@ -3300,6 +3535,10 @@ $("#view").addEventListener("click", e => {
     case "new-item": openProduct(null); break;
     case "edit": openProduct(S.products[id]); break;
     case "restock": openRestock(S.products[id]); break;
+    case "bar-new": openBarEdit(null); break;
+    case "bar-edit": openBarEdit(S.products[id]); break;
+    case "bar-opt": openBarOpt(S.products[id], el.dataset.k, el.dataset.o || null); break;
+    case "bar-restock": if (S.products[id]) openRestock(S.products[id], el.dataset.o); break;
     case "save-shop": {
       const shopName = $("#s-name").value.trim() || DEFAULTS.shopName, was = cfg().shopName;
       const ig = igClean($("#s-ig").value), wasIg = igClean(cfg().instagram);
@@ -3316,6 +3555,7 @@ $("#view").addEventListener("click", e => {
     case "pin-set": openPinChange(); break;
     case "save-sys": { const v = $("#s-sys").value.trim() || SYS_DEFAULT, was = sysName(); if (v === was) { toast("Nothing changed."); break; } pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {sysName: v})).then(() => { toast("Name saved.", "ok"); logAdd([{type: "settings", note: `Log-in screen name: ${was} \u2192 ${v}`}]); }).catch(() => {}); }); break; }
     case "drive-backup": driveBackup(true); break;
+    case "gd-check": driveCheck(); break;
     case "gd-save": {
       const id = $("#s-gcid").value.trim();
       if (id && !/\.apps\.googleusercontent\.com$/.test(id)) { toast("That doesn’t look like a Google client ID. It ends in .apps.googleusercontent.com.", "bad"); break; }
