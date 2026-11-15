@@ -21,6 +21,7 @@
   --banana:#F1D7A1; --banana-ink:#3A271B; --banana-soft:#FBEFCB;
   --fudge:#621813; --fudge-ink:#F8ECD8; --fudge-muted:#DDB0A6; --fudge-line:#7E2A22; --fudge-field:#72201A;
   --teal:#D99FBA; --teal-ink:#3A271B; --teal-soft:#F7E1EB; --teal-strong:#9C3F68; --chart:#621813;
+  --switch-on:#34A853; --switch-off:#D9CFC4; --glass:rgba(255,251,244,.72); --glass-line:rgba(58,39,27,.08);
   --ok:#2E7D4F; --ok-soft:#E1F2E7; --bad:#B3261E; --bad-soft:#FBE4E2; --warn:#9A5800; --warn-soft:#FFEFD3;
   --shadow:0 1px 0 rgba(58,39,27,.05), 0 8px 20px -14px rgba(58,39,27,.35);
   --font:"Bricolage Grotesque", ui-rounded, "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
@@ -34,7 +35,7 @@
     --bg:#1C110E; --surface:#2A1A14; --surface-2:#33211A; --ink:#F4E6CE; --muted:#C4A898; --line:#47302A;
     --banana:#F1D7A1; --banana-ink:#2A1A14; --banana-soft:#3D3019;
     --fudge:#5A1611; --fudge-ink:#F8ECD8; --fudge-muted:#D7A79D; --fudge-line:#7A2A22; --fudge-field:#6B1D17;
-    --teal:#D99FBA; --teal-ink:#2A1A14; --teal-soft:#3E2331; --teal-strong:#EDB6CF; --chart:#D99FBA;
+    --teal:#D99FBA; --teal-ink:#2A1A14; --teal-soft:#3E2331; --teal-strong:#EDB6CF; --chart:#D99FBA; --switch-on:#30C05A; --switch-off:#5A463C; --glass:rgba(34,22,17,.68); --glass-line:rgba(255,240,220,.08);
     --ok:#62C48F; --ok-soft:#14301F; --bad:#FF8A80; --bad-soft:#3A1614; --warn:#F5B451; --warn-soft:#3A2A10;
     --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 24px -14px rgba(0,0,0,.7);
     color-scheme:dark;
@@ -44,7 +45,7 @@
   --bg:#1C110E; --surface:#2A1A14; --surface-2:#33211A; --ink:#F4E6CE; --muted:#C4A898; --line:#47302A;
   --banana:#F1D7A1; --banana-ink:#2A1A14; --banana-soft:#3D3019;
   --fudge:#5A1611; --fudge-ink:#F8ECD8; --fudge-muted:#D7A79D; --fudge-line:#7A2A22; --fudge-field:#6B1D17;
-  --teal:#D99FBA; --teal-ink:#2A1A14; --teal-soft:#3E2331; --teal-strong:#EDB6CF; --chart:#D99FBA;
+  --teal:#D99FBA; --teal-ink:#2A1A14; --teal-soft:#3E2331; --teal-strong:#EDB6CF; --chart:#D99FBA; --switch-on:#30C05A; --switch-off:#5A463C; --glass:rgba(34,22,17,.68); --glass-line:rgba(255,240,220,.08);
   --ok:#62C48F; --ok-soft:#14301F; --bad:#FF8A80; --bad-soft:#3A1614; --warn:#F5B451; --warn-soft:#3A2A10;
   --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 24px -14px rgba(0,0,0,.7);
   color-scheme:dark;
@@ -138,6 +139,14 @@ h1,h2,h3{margin:0;line-height:1.15;letter-spacing:-.01em}
 .field textarea{min-height:76px;resize:vertical}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+/* iOS-style switches: green when on, grey when off */
+.check.toggle-row{flex-direction:row-reverse;justify-content:space-between;align-items:center;gap:14px;padding:4px 0}
+input.switch,.check input.switch{-webkit-appearance:none;appearance:none;width:51px;height:31px;border-radius:999px;background:var(--switch-off);position:relative;flex:none;cursor:pointer;margin:0;transition:background-color .2s ease;border:0}
+input.switch::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.16);transition:transform .25s cubic-bezier(.3,.7,.4,1.15)}
+input.switch:checked{background:var(--switch-on)}
+input.switch:checked::after{transform:translateX(20px)}
+input.switch:active::after{width:31px}
+input.switch:checked:active::after{transform:translateX(16px)}
 .check input{width:22px;height:22px;margin-top:1px;accent-color:var(--teal-strong);flex:none}
 
 /* Pages */
@@ -343,10 +352,16 @@ label:has(> input[type="file"]){position:relative}
 .lock-card{width:min(420px,100%);background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:22px 20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px;margin:auto 0}
 .lock-brand{display:flex;align-items:center;gap:12px}
 .lock-brand .brand-mark{width:46px;height:46px}
-.lock-brand b{font-size:22px;font-weight:800}
+.lock-brand b{font-size:20px;font-weight:800;line-height:1.15}
+.lock-sys{display:flex;flex-direction:column}
+.lock-sys small{font-size:13px;color:var(--muted);font-weight:600}
 .lock-card h2{font-size:22px;font-weight:750}
 .lock-code{font-size:30px;font-weight:800;letter-spacing:.08em;text-align:center;padding:14px;border:2px dashed var(--line);border-radius:14px;background:var(--surface-2);font-variant-numeric:tabular-nums}
 .lock-or{text-align:center;color:var(--muted);font-size:14px}
+.role-btn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;width:100%;border:2px solid var(--line);background:var(--surface-2);border-radius:18px;padding:16px 18px;color:var(--ink)}
+.role-btn b{font-size:22px;font-weight:800}
+.role-btn span{font-size:14.5px;color:var(--muted);line-height:1.35}
+.role-btn[data-role="expeditor"]{background:var(--banana-soft);border-color:var(--banana)}
 .who{display:flex;align-items:center;gap:8px;white-space:nowrap}
 .who span{font-size:13px;font-weight:700;color:var(--muted)}
 .who button{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;color:var(--ink)}
@@ -409,6 +424,39 @@ label:has(> input[type="file"]){position:relative}
 .slip-proof.bigwrap{flex-direction:column;align-items:stretch}
 .slip-foot{text-align:center;color:#8A7767;font-size:13px;margin-top:12px}
 .slip-for{font-size:18px;font-weight:800;margin-top:6px}
+.slip-pick{font-size:16px}
+.slip-bal{color:#B3261E;margin-top:6px}
+.l-name{background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.l-disc{color:var(--banana);font-weight:700}
+.t-extras{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.t-chip{border:1px dashed var(--fudge-line);background:transparent;color:var(--fudge-ink);border-radius:999px;padding:7px 12px;font-weight:650;font-size:14px}
+.t-chip.on{border-style:solid;background:var(--fudge-field);border-color:var(--banana);color:var(--banana)}
+.t-chip.wide{width:100%;border-radius:12px;text-align:left;margin-top:8px}
+.t-pre{margin-top:10px}
+.t-pre .field input{background:var(--fudge-field);border:1px solid var(--fudge-line);color:var(--fudge-ink);border-radius:12px;padding:9px 10px;font-size:15px;width:100%}
+.t-break{margin-top:12px;font-size:14px;color:var(--fudge-muted)}
+.t-break div{display:flex;justify-content:space-between;padding:2px 0}
+.opt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:2px solid var(--line);background:var(--surface-2);border-radius:14px;padding:10px 12px;text-align:left;color:var(--ink)}
+.opt.on{border-color:var(--fudge);background:var(--banana-soft)}
+.opt:disabled{opacity:.4}
+.opt b{font-size:16px}.opt small{color:var(--muted)}
+.opt-list{display:flex;flex-direction:column;gap:8px}
+.opt-edit{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.opt-edit h3{font-size:15px;font-weight:700}.opt-edit h3 small{font-weight:500;color:var(--muted)}
+.opt-row{display:grid;grid-template-columns:1fr 120px 150px auto;gap:6px;align-items:center}
+.opt-row.addon{grid-template-columns:1fr 130px auto}
+.opt-row input{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px;font-size:15px;min-width:0;color:var(--ink)}
+.opt-row .numfield{min-height:44px;font-size:18px;padding:8px 10px}
+.opt-row .stepper-row{grid-template-columns:40px 1fr 40px}
+.opt-row .stepper-row .numfield.big{font-size:18px}
+.p-sizes{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12.5px;color:var(--muted);margin-top:2px}
+.p-sizes .low{color:var(--warn)}
+.l-time small.l-by{display:block;font-size:11px;font-weight:700;color:var(--muted)}
+.l-time small.l-by.expeditor{color:var(--teal-strong)}
+details.changes summary{cursor:pointer;font-weight:650;color:var(--teal-strong);margin:4px 0}
+.chg{margin:8px 0;font-size:14px}.chg small{color:var(--muted)}.chg ul{margin:4px 0 0;padding-left:18px;color:var(--muted)}
+@media (max-width: 560px){ .opt-row{grid-template-columns:1fr 1fr} .opt-row .stepper-row{grid-column:1/2} .opt-row.addon{grid-template-columns:1fr 1fr} }
 .slip.wm::before{content:"";position:absolute;inset:0;background:var(--wm) center 42%/62% auto no-repeat;opacity:.08;pointer-events:none}
 .slip > *:not(.stamp):not(.slip-corners){position:relative}
 .slip-corners{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none}
@@ -433,6 +481,32 @@ label:has(> input[type="file"]){position:relative}
 /* Toast */
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:min(480px,calc(100% - 24px))}
 .toast.undo{display:flex;align-items:center;gap:14px;pointer-events:auto}
+/* Glass bars (blurred, see-through), with a solid fallback */
+.top{background:var(--glass);-webkit-backdrop-filter:saturate(1.6) blur(18px);backdrop-filter:saturate(1.6) blur(18px);border-bottom-color:var(--glass-line)}
+body::before{background:var(--glass);-webkit-backdrop-filter:saturate(1.6) blur(18px);backdrop-filter:saturate(1.6) blur(18px)}
+.toast{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.scrim{-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+@media (prefers-reduced-transparency: reduce){ .top,body::before,.toast,.scrim{-webkit-backdrop-filter:none;backdrop-filter:none} .top,body::before{background:var(--surface)} }
+/* Press and glide: press the selected tab or option, slide sideways, lift to pick */
+.seg > button[aria-pressed="true"],.tabs > .tab[aria-current="page"]{touch-action:pan-y}
+.seg.gliding,.tabs.gliding{position:relative;isolation:isolate;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.glide-pill{position:absolute;left:0;top:0;z-index:-1;border-radius:9px;background:var(--ink);pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:transform .22s cubic-bezier(.3,.8,.3,1),width .22s cubic-bezier(.3,.8,.3,1),height .22s cubic-bezier(.3,.8,.3,1)}
+.tabs .glide-pill{border-radius:999px}
+.seg.gliding button[aria-pressed="true"],.tabs.gliding .tab[aria-current="page"]{background:transparent;color:var(--muted)}
+.seg.gliding button.glide-hot,.tabs.gliding .tab.glide-hot{color:var(--surface)}
+@media (prefers-reduced-motion: reduce){ .glide-pill{transition:none} }
+/* Swipe a line in the current order to remove it */
+.lines .line{touch-action:pan-y;transition:transform .2s ease, background-color .2s ease}
+.lines .line.swiping{transition:none}
+/* Bottom sheets on phones, with a grabber you can drag down */
+@media (max-width: 760px){
+  #modal-root .modal{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:calc(94% - env(safe-area-inset-top,0px));border-radius:22px 22px 0 0;padding-top:22px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));animation:sheet-up .26s cubic-bezier(.2,.8,.2,1)}
+  #modal-root .modal::before{content:"";position:absolute;top:8px;left:50%;width:40px;height:5px;margin-left:-20px;border-radius:999px;background:var(--line)}
+  #modal-root .modal.dragging{transition:none}
+}
+@keyframes sheet-up{from{transform:translateY(100%)}to{transform:none}}
+@media (max-height: 760px){ .pad{grid-auto-rows:48px;gap:6px} .m-body{gap:11px} }
+@media (prefers-reduced-motion: reduce){ .lines .line,input.switch,input.switch::after{transition:none} #modal-root .modal{animation:none} }
 .toast.undo button{background:transparent;border:1px solid currentColor;color:inherit;border-radius:10px;padding:6px 12px;font-weight:700;font-size:15px}
 .t-hint{font-size:12.5px;color:var(--teal-strong);font-weight:650}
 .toast{background:var(--ink);color:var(--surface);padding:11px 16px;border-radius:14px;font-weight:600;font-size:15px;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);text-align:center}
@@ -499,7 +573,11 @@ label:has(> input[type="file"]){position:relative}
 
 <script>window.POS_OFFLINE = true;</script>
 <script src="tesseract.min.js"></script>
-<script>if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));</script>
+<script>if ("serviceWorker" in navigator) addEventListener("load", () => {
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (had && window.__posUpdate) window.__posUpdate(); });
+  navigator.serviceWorker.register("sw.js").then(r => { try { r.update(); } catch (e) {} setInterval(() => { try { r.update(); } catch (e) {} }, 30 * 60000); }).catch(() => {});
+});</script>
 <script>/* qrcode-generator 1.4.4, MIT License, (c) Kazuhiko Arase */
 var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,(function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1}))},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(n*r,o*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(t,r){var e=n("友");if(2!=e.length||38726!=(e[0]<<8|e[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}((function(){return qrcode}));
 </script>
@@ -533,7 +611,7 @@ function catColor(c){
 const S = {
   mode: "loading", sync: "connecting", slow: false,
   products: {}, orders: {}, closings: {}, settings: {}, logs: {},
-  loaded: {}, cart: [], customer: "", note: "", cartOpen: false,
+  loaded: {}, cart: [], customer: "", note: "", cartOpen: false, orderDisc: null, fee: 0, pre: {on: false, date: "", time: "", deposit: null},
   tab: "sell", cat: "All", seller: "all", unlocked: false,
   ui: {ordDate: dayKey(Date.now()), ordFilter: "all", q: "", period: "today", hDate: dayKey(Date.now()), hFilter: "all", hItem: "", dSeller: "all"}
 };
@@ -706,12 +784,54 @@ const imgSrc = ref => !ref ? "" : ref.kind === "asset" ? "/_blob/" + ref.id : (r
 /* ---------- derived ---------- */
 const productList = () => Object.values(S.products).sort((a, b) =>
   String(a.category || "Other").localeCompare(String(b.category || "Other")) || (a.sort || 0) - (b.sort || 0) || String(a.name).localeCompare(String(b.name)));
-const inCart = id => { const l = S.cart.find(x => x.id === id); return l ? l.qty : 0; };
-const cartTotal = () => round2(S.cart.reduce((s, l) => s + l.price * l.qty, 0));
-const cartCount = () => S.cart.reduce((s, l) => s + l.qty, 0);
+/* Product options: sizes/versions (each with its own price and stock) and add-ons (extra charge, no stock) */
+const hasVariants = p => !!p && Array.isArray(p.variants) && p.variants.length > 0;
+const hasAddons = p => !!p && Array.isArray(p.addons) && p.addons.length > 0;
+const hasOptions = p => hasVariants(p) || hasAddons(p);
+const variantOf = (p, vid) => hasVariants(p) ? p.variants.find(v => v.id === vid) || null : null;
+function stockOf(p, vid){
+  if (!p) return 0;
+  if (hasVariants(p)) { if (vid == null || vid === "") return p.variants.reduce((a, v) => a + (Number(v.stock) || 0), 0); const v = variantOf(p, vid); return v ? Number(v.stock) || 0 : 0; }
+  return Number(p.stock) || 0;
+}
+const fromPrice = p => hasVariants(p) ? Math.min(...p.variants.map(v => Number(v.price) || 0)) : Number(p.price) || 0;
+const itemLabel = (p, v, addons) => (p ? p.name : "") + (v ? ` (${v.label})` : "") + (addons && addons.length ? " + " + addons.map(a => a.label).join(", ") : "");
+const lineKey = l => [l.id, l.vid || "", (l.addons || []).map(a => a.id).sort().join(",")].join("|");
+const inCart = (id, vid) => S.cart.filter(x => x.id === id && (vid === undefined || (x.vid || "") === (vid || ""))).reduce((a, l) => a + l.qty, 0);
+const cartCount = () => S.cart.reduce((a, l) => a + l.qty, 0);
+/* Discounts: {type: "amt" | "pct", value} */
+function discAmt(base, d){ if (!d || !(Number(d.value) > 0)) return 0; return round2(Math.min(base, d.type === "pct" ? base * Number(d.value) / 100 : Number(d.value))); }
+const discLabel = d => d && Number(d.value) > 0 ? (d.type === "pct" ? `${d.value}% off` : `${peso(d.value)} off`) : "";
+const lineGross = l => round2((Number(l.price) || 0) * l.qty);
+const lineDisc = l => discAmt(lineGross(l), l.disc);
+function sumUp(lines, orderDisc, fee){
+  const gross = round2(lines.reduce((a, l) => a + lineGross(l), 0)), ld = round2(lines.reduce((a, l) => a + lineDisc(l), 0));
+  const after = round2(gross - ld), od = discAmt(after, orderDisc), f = round2(Number(fee) || 0);
+  return {gross, lineDisc: ld, orderDisc: od, discount: round2(ld + od), fee: f, net: round2(after - od), total: round2(after - od + f)};
+}
+const cartSum = () => sumUp(S.cart, S.orderDisc, S.fee);
+const cartTotal = () => cartSum().total;
+const payNow = () => { const t = cartTotal(); return S.pre.on && S.pre.deposit != null ? Math.min(round2(S.pre.deposit), t) : t; };
+/* An order line's product amount after its own discount and its share of the order discount (used for reports and seller splits) */
+function itemNet(o, it){
+  const after = lineGross(it) - lineDisc(it);
+  if (!o.orderDiscAmt) return round2(after);
+  const base = o.items.reduce((a, x) => a + lineGross(x) - lineDisc(x), 0) || 1;
+  return round2(after - o.orderDiscAmt * after / base);
+}
+const orderNet = o => o.net != null ? o.net : round2(o.items.reduce((a, it) => a + itemNet(o, it), 0));
+function orderPays(o){
+  if (Array.isArray(o.payments)) return o.payments;
+  return [{amount: o.total, method: o.method, qrLabel: o.qrLabel, qrRef: o.qrRef, at: o.createdAt, cashReceived: o.cashReceived, change: o.change, proof: o.proof}];
+}
+const orderPaid = o => round2(orderPays(o).reduce((a, x) => a + (Number(x.amount) || 0), 0));
+const orderBalance = o => o.status === "void" ? 0 : Math.max(0, round2(o.total - orderPaid(o)));
+const payName = x => x.method === "cash" ? "Cash" : (x.qrLabel || "GoTyme");
 const lowAt = p => (p.lowAt == null || p.lowAt === "") ? 5 : Number(p.lowAt);
 const orderList = () => Object.values(S.orders).sort((a, b) => b.createdAt - a.createdAt);
 const paidIn = (from, to) => orderList().filter(o => o.status !== "void" && o.createdAt >= from && o.createdAt < to);
+function paysIn(from, to){ const r = []; orderList().forEach(o => { if (o.status === "void") return; orderPays(o).forEach(x => { const t = x.at || o.createdAt; if (t >= from && t < to) r.push(Object.assign({order: o}, x)); }); }); return r; }
+const cashIn = (from, to) => round2(paysIn(from, to).filter(x => x.method === "cash").reduce((a, x) => a + (Number(x.amount) || 0), 0));
 function startOfDay(ts){ const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); }
 function nextOrderNo(ts){
   const d = new Date(ts), pre = String(d.getFullYear()).slice(-2) + pad(d.getMonth() + 1); let max = 0;
@@ -751,7 +871,7 @@ function qrSvgTag(text){
   return `<svg class="slip-qr" viewBox="-2 -2 ${n + 4} ${n + 4}" role="img" aria-label="QR code for ${esc(text)}" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#2E1B12"/></svg>`;
 }
 const qrName = o => o.qrLabel || "GoTyme";
-const payName = o => o.method === "cash" ? "Cash" : "Digital (" + qrName(o) + ")";
+const payNames = o => orderPays(o).map(x => x.method === "cash" ? "Cash" : "Digital (" + (x.qrLabel || "GoTyme") + ")").join(" + ");
 function qrList(){
   const c = cfg();
   if (Array.isArray(c.qrs)) return c.qrs;
@@ -774,13 +894,16 @@ function renderSync(){
 function renderChrome(){
   const sn = $("#shop-name"); if (!sn) return; sn.textContent = cfg().shopName;
   document.title = cfg().shopName + " POS";
-  $("#tabs").innerHTML = TABS.map(([k, label]) =>
+  const allowed = S.role === "expeditor" ? ["sell", "orders"].concat(cfg().expRestock !== false ? ["stock"] : []) : TABS.map(t => t[0]);
+  if (S.role && !allowed.includes(S.tab)) S.tab = "sell";
+  $("#tabs").innerHTML = TABS.filter(([k]) => allowed.includes(k)).map(([k, label]) =>
     `<button class="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}>${label}</button>`).join("");
   let b = "";
   if (S.mode === "cloud" && S.slow && !S.loaded.products) b = "Still reaching your saved data. Check the internet connection; nothing is lost.";
   if (S.mode === "local" && !OFFLINE) b = "Device-only mode: sales are saved on this device only.";
   if (S.twoOpen) b = "This app is open in another window too. Close one so sales and stock don’t get mixed up.";
-  if (S.role === "owner" && hasOwner() && !cfg().recHash) b = `<span style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>Create a recovery code so the owner PIN can be reset if it’s ever forgotten.</span><button class="btn ink sm" data-act="rec-new">Create code</button></span>`;
+  if (S.role === "admin" && hasOwner() && !cfg().recHash) b = `<span style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>Create a recovery code so the admin PIN can be reset if it’s ever forgotten.</span><button class="btn ink sm" data-act="rec-new">Create code</button></span>`;
+  if (S.updateReady) b = `<span style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>A new version of the app is ready.</span><button class="btn ink sm" data-act="app-reload">Update now</button></span>`;
   if (S.spaceLow) b = "This device is almost out of storage space. Back up your data, then free up space so new sales can be saved.";
   const lb = Math.max(cfg().lastBackup || 0, OFFLINE ? gd().last || 0 : 0), due = Object.keys(S.orders).length && (!lb || Date.now() - lb > 7 * 864e5);
   const driveTap = OFFLINE && driveOn() && S.driveTap && navigator.onLine && lastChange() > (gd().last || 0);
@@ -789,10 +912,11 @@ function renderChrome(){
      due && S.mode !== "loading" ? `<div class="banner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>${lb ? "It’s been over a week since your last backup." : "You haven’t backed up your data yet."}</span><button class="btn ink sm" data-act="${driveOn() ? "drive-backup" : "backup"}">Back up now</button></div>` : "");
   renderSync();
   const who = $("#who");
-  if (who) who.innerHTML = S.role ? `<span>${S.role === "owner" ? "Owner" : "Staff"}</span><button type="button" data-lock aria-label="Lock the app">Lock</button>` : "";
+  if (who) who.innerHTML = S.role ? `<span>${S.role === "admin" ? "Admin" : "Expeditor"}</span><button type="button" data-lock aria-label="Lock the app or switch user">Lock / Switch</button>` : "";
 }
-document.addEventListener("click", e => { if (e.target.closest("#who [data-lock]")) lockNow(); });
-$("#banner").addEventListener("click", e => { if (e.target.closest('[data-act="rec-new"]')) showNewRecovery(); if (e.target.closest('[data-act="backup"]')) makeBackup(); if (e.target.closest('[data-act="drive-backup"]')) driveBackup(true); });
+document.addEventListener("click", e => { if (e.target.closest("#who [data-lock]")) openLockSheet(); });
+window.__posUpdate = () => { if (!S.cart.length && !($("#modal-root") && $("#modal-root").classList.contains("on")) && !document.querySelector(".pin-layer,.qrv")) location.reload(); else { S.updateReady = true; renderChrome(); } };
+$("#banner").addEventListener("click", e => { if (e.target.closest('[data-act="app-reload"]')) location.reload(); if (e.target.closest('[data-act="rec-new"]')) showNewRecovery(); if (e.target.closest('[data-act="backup"]')) makeBackup(); if (e.target.closest('[data-act="drive-backup"]')) driveBackup(true); });
 function undoToast(msg, onUndo){
   const t = document.createElement("div");
   t.className = "toast undo"; t.setAttribute("role", "status");
@@ -819,7 +943,7 @@ function openModal(html, opts){
   const f = m.querySelector("[autofocus]"); if (f) setTimeout(() => f.focus(), 30);
   return m;
 }
-function closeModal(){ const r = $("#modal-root"); r.classList.remove("on"); r.innerHTML = ""; }
+function closeModal(){ const r = $("#modal-root"); if (!r) return; r.classList.remove("on"); r.innerHTML = ""; }
 document.addEventListener("click", e => { if (e.target.closest("#modal-root [data-close]")) closeModal(); });
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
@@ -827,7 +951,7 @@ document.addEventListener("keydown", e => {
   if (qv) { qv.querySelector(".qrv-x").click(); return; }
   const pl = document.querySelector(".pin-layer");
   if (pl) { pl.querySelector("[data-pincancel]").click(); return; }
-  if ($("#modal-root").classList.contains("on")) closeModal();
+  if ($("#modal-root") && $("#modal-root").classList.contains("on")) closeModal();
 });
 const mHead = title => `<div class="m-head"><h2>${title}</h2><button class="x" data-close>Close</button></div>`;
 
@@ -887,34 +1011,34 @@ function newPinForm(m, onSave){
 const newPinHTML = (label, btn) => `<div class="row2"><div class="field"><span>${label} (4 to 6 digits)</span>${rawField("p1", label)}</div><div class="field"><span>Type it again</span>${rawField("p2", "Repeat " + label)}</div></div>
   <p class="hint" id="np-msg" aria-live="polite"></p>${padHTML()}<button class="btn ink big" id="np-save">${btn}</button>`;
 const recoveryHTML = code => `<h2>Your recovery code</h2>
-  <p class="note">If the owner PIN is ever forgotten, this code is the only way to set a new one. Write it down and keep it somewhere safe, away from the tablet.</p>
+  <p class="note">If the admin PIN is ever forgotten, this code is the only way to set a new one. Write it down and keep it somewhere safe, away from the tablet.</p>
   <div class="lock-code" aria-label="Recovery code">${esc(code)}</div>
   <label class="check"><input type="checkbox" id="rc-ok"><span>I’ve written it down</span></label>
   <button class="btn ink big" id="rc-go" disabled>Continue</button>`;
 function bindRecovery(m, then){ const ok = $("#rc-ok", m), go = $("#rc-go", m); ok.onchange = () => { go.disabled = !ok.checked; }; go.onclick = then; }
 
-/* Owner PIN: asked before every saved change. If no owner PIN exists yet, one must be created first. */
+/* Admin PIN: asked before every saved change. If no admin PIN exists yet, one must be created first. */
 function pinOk(){
   return new Promise(resolve => {
     const layer = document.createElement("div");
     layer.className = "pin-layer";
-    const shell = inner => `<div class="scrim" data-pincancel></div><div class="modal" role="dialog" aria-modal="true" aria-label="Owner PIN">
-      <div class="m-head"><h2>Owner PIN</h2><button class="x" data-pincancel>Cancel</button></div><div class="m-body">${inner}</div></div>`;
+    const shell = inner => `<div class="scrim" data-pincancel></div><div class="modal" role="dialog" aria-modal="true" aria-label="Admin PIN">
+      <div class="m-head"><h2>Admin PIN</h2><button class="x" data-pincancel>Cancel</button></div><div class="m-body">${inner}</div></div>`;
     document.body.appendChild(layer);
     const done = ok => { layer.remove(); resolve(ok); };
     layer.addEventListener("click", e => { if (e.target.closest("[data-pincancel]")) done(false); });
     if (!hasOwner()) {
-      layer.innerHTML = shell(`<p class="note">Create an owner PIN first. From now on it’s needed to open the app and to save any change.</p>${newPinHTML("Owner PIN", "Save owner PIN")}`);
+      layer.innerHTML = shell(`<p class="note">Create an admin PIN first. From now on it’s needed to open the app and to save any change.</p>${newPinHTML("Admin PIN", "Save admin PIN")}`);
       const m = layer.querySelector(".modal");
       newPinForm(m, async pin => {
         await storeOwnerPin(pin); const code = await newRecovery();
-        await logAdd([{type: "settings", note: "Owner PIN set"}]);
+        await logAdd([{type: "settings", note: "Admin PIN set"}]);
         $(".m-body", m).innerHTML = recoveryHTML(code);
         bindRecovery(m, () => done(true));
       });
       return;
     }
-    layer.innerHTML = shell(`<p class="note">Enter the owner PIN to save this change.</p>${rawField("pin", "Owner PIN")}<p class="hint" id="pin-msg" aria-live="polite"></p>${padHTML()}`);
+    layer.innerHTML = shell(`<p class="note">Enter the admin PIN to save this change.</p>${rawField("pin", "Admin PIN")}<p class="hint" id="pin-msg" aria-live="polite"></p>${padHTML()}`);
     const m = layer.querySelector(".modal"), msg = $("#pin-msg", m), need = ownerLen();
     attachPad(m, async api => {
       if (Date.now() < pinLockUntil) { api.set("pin", ""); return; }
@@ -933,7 +1057,30 @@ let lockEl = null, lastAct = Date.now();
 ["pointerdown", "keydown"].forEach(ev => addEventListener(ev, () => { lastAct = Date.now(); }, true));
 const autoLockMin = () => { const v = cfg().autoLock; return v == null ? 30 : Number(v); };
 const authReady = () => S.mode === "local" || (S.mode === "cloud" && S.loaded.settings);
-function lockNow(){ S.role = null; S.cartOpen = false; syncLock(); renderChrome(); }
+const SYS_DEFAULT = "RWB Sales & Orders System";
+const sysName = () => (!cfg().sysName || cfg().sysName === "RWB Order Fulfillment System" ? SYS_DEFAULT : cfg().sysName);
+const autoLockText = () => autoLockMin() ? `after ${autoLockMin() >= 60 ? autoLockMin() / 60 + " hour" : autoLockMin() + " minutes"} with no taps` : "only when the app is closed and reopened";
+function lockNow(){
+  if (S.role) S.lastRole = S.role;
+  S.role = null; S.cartOpen = false;
+  syncLock(); renderChrome();
+}
+function openLockSheet(){
+  const adm = S.role === "admin";
+  openModal(mHead("Lock or switch user") + `<div class="m-body">
+    <p class="note">Locking covers the screen until a PIN is entered. To hand over to someone else, lock, then tap <b>Switch role</b>. Any order in progress is kept.</p>
+    <div class="mini"><span>Auto-lock</span><b>${esc(autoLockText())}</b></div>
+    ${adm ? `<div class="field"><span>Change auto-lock (admin PIN)</span><div class="seg" role="group" aria-label="Auto-lock">${[[5, "5 min"], [15, "15 min"], [30, "30 min"], [60, "1 hour"], [0, "Only when reopened"]].map(([v, l]) => `<button data-al="${v}" aria-pressed="${autoLockMin() === v}">${l}</button>`).join("")}</div></div>` : `<p class="hint">Only the admin can change the auto-lock time.</p>`}
+    <div class="btn-row"><button class="btn ghost" data-close>Cancel</button><button class="btn ink" id="lk-now">Lock now</button></div></div>`, {onMount(m){
+      $("#lk-now", m).onclick = () => { closeModal(); lockNow(); };
+      m.addEventListener("click", async e => {
+        const b = e.target.closest("[data-al]"); if (!b) return;
+        const v = Number(b.dataset.al); if (v === autoLockMin()) return;
+        if (!(await pinOk())) return;
+        try { await put("settings", null, Object.assign({}, S.settings, {autoLock: v})); await logAdd([{type: "settings", note: `Auto-lock: ${v ? v + " min" : "only when reopened"}`}]); toast("Auto-lock updated.", "ok"); openLockSheet(); } catch (err) {}
+      });
+    }});
+}
 function idleCheck(){ const mins = autoLockMin(); if (S.role && mins > 0 && Date.now() - lastAct > mins * 6e4) lockNow(); }
 setInterval(idleCheck, 15000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") idleCheck(); });
@@ -944,41 +1091,53 @@ function syncLock(){
   closeModal(); document.querySelectorAll(".qrv,.pin-layer").forEach(x => x.remove());
   lockEl = document.createElement("div"); lockEl.className = "lock"; lockEl.setAttribute("role", "dialog"); lockEl.setAttribute("aria-modal", "true"); lockEl.setAttribute("aria-label", "Log in");
   document.body.appendChild(lockEl);
-  if (hasOwner()) showLogin(); else showWelcome();
+  if (!hasOwner()) showWelcome(); else if (S.lastRole) showPinFor(S.lastRole); else showLogin();
 }
-const lockBrand = () => `<div class="lock-brand"><span class="brand-mark" aria-hidden="true"></span><b>${esc(cfg().shopName)}</b></div>`;
-function enter(role){
-  S.role = role; pinFails = 0; lastAct = Date.now();
+const lockBrand = () => `<div class="lock-brand"><span class="brand-mark" aria-hidden="true"></span><span class="lock-sys"><b>${esc(sysName())}</b><small>${esc(cfg().shopName)}</small></span></div>`;
+/* "Back to the app" only right after a manual lock (accidental taps); never after auto-lock or reopening */
+
+function enter(role, resumed){
+  S.role = role; S.lastRole = role; pinFails = 0; lastAct = Date.now();
   if (lockEl) { lockEl.remove(); lockEl = null; }
   render();
-  toast(role === "owner" ? "Logged in as owner." : "Logged in as staff.", "ok");
+  toast(resumed ? "Back in the app." : role === "admin" ? "Logged in as Admin." : "Logged in as Expeditor.", "ok");
 }
 function showLogin(){
-  lockEl.innerHTML = `<div class="lock-card">${lockBrand()}<h2>Enter your PIN</h2>
-    <p class="note">${hasStaff() ? "Owner or staff PIN." : "Owner PIN."}</p>
-    ${rawField("lp", "PIN")}<p class="hint" id="lmsg" aria-live="polite"></p>${padHTML()}
-    <button type="button" class="linkbtn" data-forgot>Forgot the owner PIN?</button></div>`;
+  lockEl.innerHTML = `<div class="lock-card">${lockBrand()}<h2>Who’s using?</h2><p class="note" style="margin-top:-8px">Select your role to continue.</p>
+    <button type="button" class="role-btn" data-role="expeditor"><b>Expeditor</b><span>Selling mode for shop helpers and the cashier: sell, take payments, print and fulfil orders.</span></button>
+    <button type="button" class="role-btn" data-role="admin"><b>Admin</b><span>Everything: stock, prices, reports and settings, plus selling.</span></button></div>`;
+  lockEl.querySelectorAll("[data-role]").forEach(b => b.onclick = () => showPinFor(b.dataset.role));
+}
+function showPinFor(role){
+  const adm = role === "admin";
+  lockEl.innerHTML = `<div class="lock-card">${lockBrand()}<h2>${S.lastRole === role ? (adm ? "Locked: Admin" : "Locked: Expeditor") : adm ? "Admin PIN" : "Expeditor PIN"}</h2>
+    <p class="note">${adm ? "Enter the admin PIN." : hasStaff() ? "Enter the expeditor PIN (the admin PIN works too)." : "No expeditor PIN has been set yet: enter the admin PIN, then add one in Settings → Log in and PINs."}</p>
+    ${rawField("lp", adm ? "Admin PIN" : "Expeditor PIN")}<p class="hint" id="lmsg" aria-live="polite"></p>${padHTML()}
+    <div class="btn-row"><button type="button" class="btn ghost" data-back>Switch role</button></div>
+    ${adm ? `<button type="button" class="linkbtn" data-forgot>Forgot the admin PIN?</button>` : ""}</div>`;
   const m = lockEl.querySelector(".lock-card"), msg = $("#lmsg", m);
+  const lens = adm ? [ownerLen()] : loginLens(), max = Math.max(...lens);
   attachPad(m, async api => {
     if (Date.now() < pinLockUntil) { api.set("lp", ""); return; }
-    const v = api.raw("lp"), lens = loginLens(), max = Math.max(...lens);
+    const v = api.raw("lp");
     if (v.length > max) { api.set("lp", v.slice(0, max)); return; }
     if (!lens.includes(v.length)) { if (v.length && !/Too many/.test(msg.textContent)) msg.textContent = ""; return; }
-    const role = (v.length === ownerLen() && await checkOwner(v)) ? "owner" : (hasStaff() && await checkStaff(v)) ? "staff" : null;
+    const ok = (v.length === ownerLen() && await checkOwner(v)) || (!adm && hasStaff() && await checkStaff(v));
     if (api.raw("lp") !== v) return;
-    if (role) { enter(role); return; }
+    if (ok) { enter(role); return; }
     if (v.length === max) { api.set("lp", ""); wrongPin(m, msg); }
   });
   padLockTick(m, msg);
-  $("[data-forgot]", m).onclick = showForgot;
+  $("[data-back]", m).onclick = showLogin;
+  const fg = m.querySelector("[data-forgot]"); if (fg) fg.onclick = showForgot;
 }
 function showForgot(){
-  lockEl.innerHTML = `<div class="lock-card">${lockBrand()}<h2>Reset the owner PIN</h2>
-    <p class="note">Type the recovery code you wrote down when the owner PIN was created.</p>
+  lockEl.innerHTML = `<div class="lock-card">${lockBrand()}<h2>Reset the admin PIN</h2>
+    <p class="note">Type the recovery code you wrote down when the admin PIN was created.</p>
     <label class="field"><span>Recovery code</span><input id="rc-in" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX"></label>
     <p class="hint" id="rc-msg" aria-live="polite"></p>
     <button class="btn ink big" id="rc-check">Check code</button>
-    <button type="button" class="linkbtn" data-back>Back to PIN</button>
+    <button type="button" class="linkbtn" data-back>Back</button>
     <p class="note">Lost the recovery code too? Your sales aren’t lost: a backup file can have its PIN cleared by whoever set up the app, then be restored on a fresh install. Keep backups.</p></div>`;
   const m = lockEl.querySelector(".lock-card");
   $("[data-back]", m).onclick = showLogin;
@@ -986,26 +1145,26 @@ function showForgot(){
     if (Date.now() < pinLockUntil) { $("#rc-msg", m).textContent = "Too many wrong tries. Wait a moment."; return; }
     if (!(await checkRecovery($("#rc-in", m).value))) { $("#rc-msg", m).textContent = "That code doesn’t match."; if (++pinFails >= 5) { pinFails = 0; pinLockUntil = Date.now() + 30000; } return; }
     pinFails = 0;
-    m.innerHTML = `${lockBrand()}<h2>Set a new owner PIN</h2>${newPinHTML("New owner PIN", "Save new PIN")}`;
+    m.innerHTML = `${lockBrand()}<h2>Set a new admin PIN</h2>${newPinHTML("New admin PIN", "Save new PIN")}`;
     newPinForm(m, async pin => {
       await storeOwnerPin(pin); const code = await newRecovery();
-      await logAdd([{type: "settings", note: "Owner PIN reset with the recovery code"}]);
+      await logAdd([{type: "settings", note: "Admin PIN reset with the recovery code"}]);
       m.innerHTML = lockBrand() + recoveryHTML(code).replace("Your recovery code", "Your new recovery code");
-      bindRecovery(m, () => enter("owner"));
+      bindRecovery(m, () => enter("admin"));
     });
   };
 }
 function showWelcome(){
-  lockEl.innerHTML = `<div class="lock-card">${lockBrand()}<h2>Welcome! Create an owner PIN</h2>
-    <p class="note">The owner PIN opens the app and is asked before any change is saved, like prices, stock and settings.</p>
-    ${newPinHTML("Owner PIN", "Save owner PIN")}
+  lockEl.innerHTML = `<div class="lock-card">${lockBrand()}<h2>Welcome! Create an admin PIN</h2>
+    <p class="note">The admin PIN opens the app and is asked before any change is saved, like prices, stock and settings.</p>
+    ${newPinHTML("Admin PIN", "Save admin PIN")}
     <p class="lock-or">Moving from another device?</p>
     <label class="btn ghost" style="cursor:pointer"><input type="file" accept=".json,application/json" id="w-restore" hidden>Restore from a backup</label>
     <p class="hint" id="w-msg" aria-live="polite"></p></div>`;
   const m = lockEl.querySelector(".lock-card");
   newPinForm(m, async pin => {
     await storeOwnerPin(pin); const code = await newRecovery();
-    await logAdd([{type: "settings", note: "Owner PIN set"}]);
+    await logAdd([{type: "settings", note: "Admin PIN set"}]);
     m.innerHTML = lockBrand() + recoveryHTML(code);
     bindRecovery(m, () => showStaffOffer(m));
   });
@@ -1021,20 +1180,145 @@ function showWelcome(){
   };
 }
 function showStaffOffer(m){
-  m.innerHTML = `${lockBrand()}<h2>Add a staff PIN?</h2>
-    <p class="note">Helpers log in with the staff PIN. They can sell, take payments, print and fulfil orders, but anything that changes prices, stock or settings still needs the owner PIN.</p>
-    <button class="btn banana big" id="st-yes">Set a staff PIN</button><button class="btn ghost" id="st-no">Skip for now</button>`;
-  $("#st-no", m).onclick = () => enter("owner");
+  m.innerHTML = `${lockBrand()}<h2>Add an expeditor PIN?</h2>
+    <p class="note">Shop helpers and cashiers log in as Expeditor. They can sell, take payments, print and fulfil orders, but anything that changes prices, stock or settings still needs the admin PIN.</p>
+    <button class="btn banana big" id="st-yes">Set an expeditor PIN</button><button class="btn ghost" id="st-no">Skip for now</button>`;
+  $("#st-no", m).onclick = () => enter("admin");
   $("#st-yes", m).onclick = () => {
-    m.innerHTML = `${lockBrand()}<h2>Staff PIN</h2><p class="note">Use a different PIN from the owner PIN.</p>${newPinHTML("Staff PIN", "Save staff PIN")}`;
+    m.innerHTML = `${lockBrand()}<h2>Expeditor PIN</h2><p class="note">Use a different PIN from the admin PIN.</p>${newPinHTML("Expeditor PIN", "Save expeditor PIN")}`;
     newPinForm(m, async pin => {
-      if (await checkOwner(pin)) { $("#np-msg", m).textContent = "That’s the owner PIN. Pick a different one."; $("#np-save", m).disabled = false; return; }
+      if (await checkOwner(pin)) { $("#np-msg", m).textContent = "That’s the admin PIN. Pick a different one."; $("#np-save", m).disabled = false; return; }
       await put("settings", null, Object.assign({}, S.settings, await pinFields("staff", pin)));
-      await logAdd([{type: "settings", note: "Staff PIN set"}]);
-      enter("owner");
+      await logAdd([{type: "settings", note: "Expeditor PIN set"}]);
+      enter("admin");
     });
   };
 }
+
+/* ---------- iOS-style motion: sliding selection, swipes, sheets ---------- */
+/* Press and glide: press the selected tab or option, slide sideways, and the pill follows; lifting picks the option under the finger (same click as tapping it). Lifting outside the control cancels. */
+(function(){
+  const OPTS = ":scope > button:not([disabled])";
+  const isOn = b => b.getAttribute("aria-pressed") === "true" || b.getAttribute("aria-current") === "page";
+  const noScroll = e => { if (g && g.on && e.cancelable) e.preventDefault(); };
+  let g = null, eatUntil = 0;
+  function place(pill, ctl, b){
+    const r = b.getBoundingClientRect(), c = ctl.getBoundingClientRect();
+    pill.style.width = r.width + "px"; pill.style.height = r.height + "px";
+    pill.style.transform = `translate(${r.left - c.left - ctl.clientLeft + ctl.scrollLeft}px,${r.top - c.top - ctl.clientTop + ctl.scrollTop}px)`;
+  }
+  function under(x, y){
+    const c = g.ctl.getBoundingClientRect();
+    if (x < c.left || x > c.right || y < c.top || y > c.bottom) return null;
+    let best = null, bd = Infinity;
+    g.ctl.querySelectorAll(OPTS).forEach(b => {
+      const r = b.getBoundingClientRect(), dx = Math.max(r.left - x, 0, x - r.right), dy = Math.max(r.top - y, 0, y - r.bottom), d = dx * dx + dy * dy;
+      if (d < bd) { bd = d; best = b; }
+    });
+    return best;
+  }
+  function setHot(b){
+    if (b === g.hot) return;
+    if (g.hot) g.hot.classList.remove("glide-hot");
+    g.hot = b; b.classList.add("glide-hot"); place(g.pill, g.ctl, b);
+    const r = b.getBoundingClientRect(), c = g.ctl.getBoundingClientRect();
+    if (r.left < c.left) g.ctl.scrollLeft -= c.left - r.left + 4; else if (r.right > c.right) g.ctl.scrollLeft += r.right - c.right + 4;
+  }
+  function start(){
+    g.on = true; g.ctl.classList.add("gliding");
+    g.pill = document.createElement("span"); g.pill.className = "glide-pill"; g.pill.setAttribute("aria-hidden", "true");
+    g.ctl.appendChild(g.pill);
+    g.pill.style.transition = "none"; setHot(g.from); void g.pill.offsetWidth; g.pill.style.transition = "";
+    try { g.ctl.setPointerCapture(g.id); } catch (e) {}
+  }
+  function finish(commit){
+    const cur = g; g = null; if (!cur) return;
+    cur.ctl.removeEventListener("touchmove", noScroll);
+    if (!cur.on) return;
+    eatUntil = Date.now() + 700;
+    const pick = commit && cur.ctl.isConnected && cur.hot && cur.hot !== cur.from ? cur.hot : null;
+    if (pick) pick.click();
+    cur.ctl.classList.remove("gliding"); if (cur.hot) cur.hot.classList.remove("glide-hot"); if (cur.pill) cur.pill.remove();
+  }
+  document.addEventListener("pointerdown", e => {
+    if (g) { if (e.pointerId !== g.id) finish(false); return; }
+    eatUntil = 0;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const b = e.target.closest && e.target.closest(".seg > button, .tabs > .tab");
+    if (!b || b.disabled || !isOn(b)) return;
+    g = {ctl: b.parentElement, from: b, id: e.pointerId, x: e.clientX, y: e.clientY, on: false, hot: null, pill: null};
+    g.ctl.addEventListener("touchmove", noScroll, {passive: false});
+  });
+  document.addEventListener("pointermove", e => {
+    if (!g || e.pointerId !== g.id) return;
+    if (!g.ctl.isConnected || (e.pointerType === "mouse" && !(e.buttons & 1))) { finish(false); return; }
+    if (!g.on) {
+      const dx = Math.abs(e.clientX - g.x), dy = Math.abs(e.clientY - g.y);
+      if (dx > 8 && dx > dy * 1.5) start(); else { if (dy > 10) finish(false); return; }
+    }
+    setHot(under(e.clientX, e.clientY) || g.from);
+  });
+  document.addEventListener("pointerup", e => {
+    if (!g || e.pointerId !== g.id) return;
+    if (!g.on) { finish(false); return; }
+    const b = g.ctl.isConnected ? under(e.clientX, e.clientY) : null;
+    if (b) setHot(b);
+    finish(!!b);
+  });
+  document.addEventListener("pointercancel", e => { if (g && e.pointerId === g.id) finish(false); });
+  /* After a glide, the browser's own click (mouse) must not select anything else */
+  document.addEventListener("click", e => { if (e.isTrusted && e.detail > 0 && Date.now() < eatUntil) { eatUntil = 0; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+})();
+const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms || 8); } catch (e) {} };
+document.addEventListener("change", e => { if (e.target.classList && e.target.classList.contains("switch")) buzz(8); }, true);
+/* Swipe left on an order line to remove it (with Undo) */
+(function(){
+  let sw = null;
+  document.addEventListener("pointerdown", e => {
+    const li = e.target.closest(".lines .line"); if (!li || e.target.closest("button")) return;
+    sw = {li, x: e.clientX, y: e.clientY, dx: 0, on: false, id: e.pointerId};
+  });
+  document.addEventListener("pointermove", e => {
+    if (!sw || e.pointerId !== sw.id) return;
+    const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (!sw.on) { if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.4) { sw.on = true; sw.li.classList.add("swiping"); } else if (Math.abs(dy) > 12) { sw = null; return; } else return; }
+    sw.dx = Math.min(0, dx);
+    sw.li.style.transform = `translateX(${sw.dx}px)`;
+    sw.li.style.backgroundColor = `rgba(179,38,30,${Math.min(.55, -sw.dx / 220)})`;
+  });
+  const end = e => {
+    if (!sw || (e && e.pointerId !== sw.id)) return;
+    const {li, dx, on} = sw; sw = null;
+    if (!on) return;
+    li.classList.remove("swiping");
+    if (dx < -90) {
+      const key = li.querySelector("[data-key]") && li.querySelector("[data-key]").dataset.key, at = S.cart.findIndex(x => lineKey(x) === key);
+      if (at >= 0) { buzz(12); const [line] = S.cart.splice(at, 1); render(); undoToast(`Removed ${line.qty > 1 ? line.qty + " × " : ""}${line.name}`, () => { S.cart.splice(Math.min(at, S.cart.length), 0, line); render(); }); return; }
+    }
+    li.style.transform = ""; li.style.backgroundColor = "";
+  };
+  document.addEventListener("pointerup", end); document.addEventListener("pointercancel", end);
+})();
+/* Phones: swipe the order panel's handle up or down; drag a sheet down by its title to close it */
+(function(){
+  let h = null, suppress = false;
+  document.addEventListener("pointerdown", e => {
+    const hd = e.target.closest(".ticket-handle"); if (hd) { h = {y: e.clientY, kind: "ticket"}; return; }
+    const mh = e.target.closest("#modal-root .modal .m-head");
+    if (mh && matchMedia("(max-width: 760px)").matches && !e.target.closest("button")) h = {y: e.clientY, kind: "sheet", el: mh.closest(".modal")};
+  });
+  document.addEventListener("pointermove", e => {
+    if (!h || h.kind !== "sheet") return;
+    const dy = Math.max(0, e.clientY - h.y); h.el.classList.add("dragging"); h.el.style.transform = `translateY(${dy}px)`;
+  });
+  document.addEventListener("pointerup", e => {
+    if (!h) return;
+    const dy = e.clientY - h.y, cur = h; h = null;
+    if (cur.kind === "ticket" && Math.abs(dy) > 30) { suppress = true; S.cartOpen = dy < 0; render(); }
+    if (cur.kind === "sheet") { cur.el.classList.remove("dragging"); if (dy > 90) closeModal(); else cur.el.style.transform = ""; }
+  });
+  document.addEventListener("click", e => { if (suppress && e.target.closest(".ticket-handle")) { suppress = false; e.stopPropagation(); e.preventDefault(); } }, true);
+})();
 
 /* ---------- render ---------- */
 function render(){
@@ -1051,8 +1335,17 @@ function render(){
 
 /* Sell */
 function viewSell(){
-  S.cart = S.cart.filter(l => S.products[l.id]);
-  S.cart.forEach(l => { const p = S.products[l.id]; l.price = Number(p.price) || 0; l.name = p.name; l.qty = Math.min(l.qty, Math.max(0, Number(p.stock) || 0)); });
+  S.cart = S.cart.filter(l => S.products[l.id] && (!l.vid || variantOf(S.products[l.id], l.vid)) && (!!l.vid === hasVariants(S.products[l.id])));
+  const rem = {};
+  S.cart.forEach(l => {
+    const p = S.products[l.id], v = l.vid ? variantOf(p, l.vid) : null, k = l.id + "|" + (l.vid || "");
+    const valid = (l.addons || []).filter(a => hasAddons(p) && p.addons.some(x => x.id === a.id)).map(a => p.addons.find(x => x.id === a.id));
+    l.addons = valid.map(a => ({id: a.id, label: a.label, price: Number(a.price) || 0}));
+    l.price = round2((v ? Number(v.price) || 0 : Number(p.price) || 0) + l.addons.reduce((a, x) => a + x.price, 0));
+    l.name = itemLabel(p, v, l.addons);
+    if (rem[k] == null) rem[k] = stockOf(p, l.vid || null);
+    l.qty = Math.min(l.qty, Math.max(0, rem[k])); rem[k] -= l.qty;
+  });
   S.cart = S.cart.filter(l => l.qty > 0);
   const vlist = vendorList(), multi = vlist.length > 1;
   if (!multi || !vlist.some(v => v.id === S.seller)) S.seller = "all";
@@ -1076,64 +1369,142 @@ function viewSell(){
 }
 const tapToggles = () => cfg().tapMode !== "add";
 function tileHTML(p){
-  const stock = Number(p.stock) || 0, c = inCart(p.id), avail = stock - c;
+  const opt = hasOptions(p), stock = stockOf(p), c = inCart(p.id), avail = stock - c;
   const out = stock <= 0 && !c, full = !out && avail <= 0, low = !out && avail > 0 && avail <= lowAt(p);
   const label = out ? "Sold out" : full ? "All in this order" : low ? `Only ${avail} left` : `${avail} left`;
-  const removable = c && tapToggles();
-  return `<button class="tile ${out ? "out" : ""} ${c ? "incart" : ""}" data-act="add" data-id="${esc(p.id)}" ${out || (full && !removable) ? "disabled" : ""} style="--c:${catColor(p.category)}" aria-label="${esc(p.name)}, ${peso(p.price)}${hasVendors() ? ", sold by " + esc(vendorName(p.vendor)) : ""}, ${label}${removable ? ", in the order, tap to remove" : ""}">
+  const removable = c && tapToggles() && !opt;
+  const price = hasVariants(p) && new Set(p.variants.map(v => Number(v.price) || 0)).size > 1 ? `From ${peso(fromPrice(p))}` : peso(fromPrice(p));
+  return `<button class="tile ${out ? "out" : ""} ${c ? "incart" : ""}" data-act="add" data-id="${esc(p.id)}" ${out || (full && !removable) ? "disabled" : ""} style="--c:${catColor(p.category)}" aria-label="${esc(p.name)}, ${price}${hasVendors() ? ", sold by " + esc(vendorName(p.vendor)) : ""}, ${label}${removable ? ", in the order, tap to remove" : opt ? ", tap to choose options" : ""}">
     <span class="dot" aria-hidden="true"></span>${c ? `<span class="qty-badge num">${c}</span>` : ""}
     <span class="t-name">${esc(p.name)}</span>
-    <span class="t-price num">${peso(p.price)}</span>
+    <span class="t-price num">${price}</span>
     ${hasVendors() && (p.vendor || HOUSE) !== HOUSE ? `<span class="t-seller" style="--v:${vendorColor(p.vendor)}"><i></i>${esc(vendorName(p.vendor))}</span>` : ""}
-    <span class="t-stock ${low || full ? "low" : ""}">${label}</span>${removable ? `<span class="t-hint">Tap again to remove</span>` : ""}</button>`;
+    <span class="t-stock ${low || full ? "low" : ""}">${label}</span>${removable ? `<span class="t-hint">Tap again to remove</span>` : opt && !out && !full ? `<span class="t-hint">${hasVariants(p) ? "Choose size" : "Add-ons available"}</span>` : ""}</button>`;
 }
 function ticketHTML(){
-  const total = cartTotal(), n = cartCount();
-  const lines = S.cart.map(l => `<li class="line">
-      <span class="l-name">${esc(l.name)}</span><span class="l-sum num">${peso(l.price * l.qty)}</span>
-      <span class="l-sub num">${peso(l.price)} each</span>
-      <span class="stepper"><button data-act="dec" data-id="${esc(l.id)}" aria-label="Remove one ${esc(l.name)}">−</button><b class="num">${l.qty}</b><button data-act="inc" data-id="${esc(l.id)}" aria-label="Add one ${esc(l.name)}">+</button></span>
-    </li>`).join("");
+  const sum = cartSum(), total = sum.total, n = cartCount(), now = payNow();
+  const lines = S.cart.map(l => { const k = esc(lineKey(l)), d = lineDisc(l); return `<li class="line">
+      <button type="button" class="l-name" data-act="line-adj" data-key="${k}" aria-label="Discount for ${esc(l.name)}">${esc(l.name)}</button><span class="l-sum num">${peso(lineGross(l) - d)}</span>
+      <span class="l-sub num">${peso(l.price)} each${d ? `, <b class="l-disc">${esc(discLabel(l.disc))}</b>` : ""}</span>
+      <span class="stepper"><button data-act="dec" data-key="${k}" aria-label="Remove one ${esc(l.name)}">−</button><b class="num">${l.qty}</b><button data-act="inc" data-key="${k}" aria-label="Add one ${esc(l.name)}">+</button></span>
+    </li>`; }).join("");
+  const extras = S.cart.length ? `<div class="t-extras">
+      <button type="button" class="t-chip ${S.orderDisc ? "on" : ""}" data-act="order-disc">${S.orderDisc ? esc(discLabel(S.orderDisc)) : "Discount"}</button>
+      <button type="button" class="t-chip ${S.fee ? "on" : ""}" data-act="order-fee">${S.fee ? "Delivery " + peso(S.fee) : "Delivery fee"}</button>
+      <button type="button" class="t-chip ${S.pre.on ? "on" : ""}" data-act="order-pre">${S.pre.on ? "Pre-order ✓" : "Pre-order"}</button></div>` : "";
+  const pre = S.cart.length && S.pre.on ? `<div class="t-pre">
+      <div class="fields"><label class="field"><span>Pickup date</span><input type="date" id="pre-date" value="${esc(S.pre.date)}"></label><label class="field"><span>Pickup time</span><input type="time" id="pre-time" value="${esc(S.pre.time)}"></label></div>
+      <button type="button" class="t-chip wide ${S.pre.deposit != null ? "on" : ""}" data-act="order-dep">${S.pre.deposit != null && S.pre.deposit < total ? `Deposit now ${peso(now)}, balance ${peso(total - now)} on pickup` : "Paying in full now (tap to take a deposit)"}</button></div>` : "";
+  const breakdown = S.cart.length && (sum.discount || sum.fee) ? `<div class="t-break">
+      <div><span>Subtotal</span><span class="num">${peso(sum.gross)}</span></div>
+      ${sum.discount ? `<div><span>Discount</span><span class="num">−${peso(sum.discount)}</span></div>` : ""}
+      ${sum.fee ? `<div><span>Delivery fee</span><span class="num">${peso(sum.fee)}</span></div>` : ""}</div>` : "";
+  const payLbl = now < total ? ` ${peso(now)}` : "";
   return `<aside class="ticket ${S.cartOpen ? "open" : ""}" aria-label="Current order">
     <button class="ticket-handle" data-act="toggle-cart"><span>${n ? plural(n, "item") : "No items yet"}${S.cartOpen ? " (hide)" : " (view)"}</span><strong class="num">${peso(total)}</strong></button>
     <div class="ticket-head"><h2>Current order</h2>${S.cart.length ? `<button class="link" data-act="clear-cart">Clear</button>` : ""}</div>
     <div class="fields">
-      <label class="field"><span>Customer</span><input id="cust" value="${esc(S.customer)}" placeholder="Optional" autocomplete="off"></label>
-      <label class="field"><span>Note</span><input id="note" value="${esc(S.note)}" placeholder="e.g. pickup 3pm" autocomplete="off"></label>
+      <label class="field"><span>Customer</span><input id="cust" value="${esc(S.customer)}" placeholder="${S.pre.on ? "Needed for pre-orders" : "Optional"}" autocomplete="off"></label>
+      <label class="field"><span>Note</span><input id="note" value="${esc(S.note)}" placeholder="e.g. no nuts" autocomplete="off"></label>
     </div>
     ${S.cart.length ? `<ul class="lines">${lines}</ul>` : `<div class="empty-ticket">Tap an item to start an order.</div>`}
+    ${extras}${pre}${breakdown}
     <div class="total-row"><span>Total</span><strong class="num">${peso(total)}</strong></div>
     <div class="pay">
-      <button class="btn banana big" data-act="pay-cash" ${S.cart.length ? "" : "disabled"}>Cash</button>
-      <button class="btn teal big" data-act="pay-qr" ${S.cart.length ? "" : "disabled"}>Digital payment</button>
+      <button class="btn banana big" data-act="pay-cash" ${S.cart.length ? "" : "disabled"}>Cash${payLbl}</button>
+      <button class="btn teal big" data-act="pay-qr" ${S.cart.length ? "" : "disabled"}>Digital${payLbl || " payment"}</button>
     </div>
   </aside>`;
 }
 function addToCart(id){
   const p = S.products[id]; if (!p) return;
+  if (hasOptions(p)) { openChooser(p); return; }
   const at = S.cart.findIndex(x => x.id === id);
   if (at >= 0 && tapToggles()) {
     const [line] = S.cart.splice(at, 1);
     render();
     undoToast(`Removed ${line.qty > 1 ? line.qty + " × " : ""}${line.name}`, () => {
       if (S.cart.some(x => x.id === id)) return;
-      const q = Math.min(line.qty, Number((S.products[id] || {}).stock) || 0); if (q <= 0) return;
+      const q = Math.min(line.qty, stockOf(S.products[id])); if (q <= 0) return;
       S.cart.splice(Math.min(at, S.cart.length), 0, Object.assign({}, line, {qty: q})); render();
     });
     return;
   }
-  const avail = (Number(p.stock) || 0) - inCart(id);
+  const avail = stockOf(p) - inCart(id);
   if (avail <= 0) { toast(`No more ${p.name} in stock.`, "bad"); return; }
   const l = S.cart.find(x => x.id === id);
-  if (l) l.qty++; else S.cart.push({id, name: p.name, price: Number(p.price) || 0, qty: 1});
+  if (l) l.qty++; else S.cart.push({id, name: p.name, price: Number(p.price) || 0, qty: 1, addons: []});
   render();
 }
-function changeQty(id, d){
-  const l = S.cart.find(x => x.id === id); if (!l) return;
-  if (d > 0) { const p = S.products[id]; if (p && l.qty >= (Number(p.stock) || 0)) { toast(`Only ${p.stock} ${p.name} in stock.`, "bad"); return; } }
+/* Choose a size and add-ons for an item that has options */
+function openChooser(p){
+  let vid = hasVariants(p) ? (p.variants.find(v => stockOf(p, v.id) - inCart(p.id, v.id) > 0) || {}).id || null : null, qty = 1;
+  const picked = new Set();
+  openModal(mHead(esc(p.name)) + `<div class="m-body" id="ch"></div>`, {onMount(m){
+    const draw = () => {
+      const v = vid ? variantOf(p, vid) : null, base = v ? Number(v.price) || 0 : Number(p.price) || 0;
+      const adds = (p.addons || []).filter(a => picked.has(a.id)), unit = round2(base + adds.reduce((a, x) => a + (Number(x.price) || 0), 0));
+      const left = hasVariants(p) ? (v ? stockOf(p, vid) - inCart(p.id, vid) : 0) : stockOf(p) - inCart(p.id);
+      qty = Math.max(1, Math.min(qty, Math.max(1, left)));
+      $("#ch", m).innerHTML = `${hasVariants(p) ? `<div class="field"><span>Size</span><div class="opt-grid">${p.variants.map(x => { const lf = stockOf(p, x.id) - inCart(p.id, x.id); return `<button type="button" class="opt ${x.id === vid ? "on" : ""}" data-v="${esc(x.id)}" ${lf <= 0 ? "disabled" : ""}><b>${esc(x.label)}</b><span class="num">${peso(x.price)}</span><small>${lf <= 0 ? "Sold out" : lf + " left"}</small></button>`; }).join("")}</div></div>` : ""}
+        ${hasAddons(p) ? `<div class="field"><span>Add-ons</span><div class="opt-list">${p.addons.map(a => `<label class="check"><input type="checkbox" data-a="${esc(a.id)}" ${picked.has(a.id) ? "checked" : ""}><span>${esc(a.label)} <b class="num">+${peso(a.price)}</b></span></label>`).join("")}</div></div>` : ""}
+        <div class="field"><span>How many</span><div class="stepper-row"><button type="button" class="stepbtn" data-q="-1" aria-label="One less">−</button><div class="numfield big num" style="cursor:default"><b>${qty}</b></div><button type="button" class="stepbtn" data-q="1" aria-label="One more">+</button></div></div>
+        <button class="btn banana big" id="ch-add" ${left <= 0 ? "disabled" : ""}>Add ${qty} · ${peso(unit * qty)}</button>`;
+      $("#ch-add", m).onclick = () => {
+        if (left <= 0) return;
+        const addons = adds.map(a => ({id: a.id, label: a.label, price: Number(a.price) || 0}));
+        const line = {id: p.id, vid: vid || undefined, addons, qty, price: unit, name: itemLabel(p, v, addons)};
+        const same = S.cart.find(x => lineKey(x) === lineKey(line));
+        if (same) same.qty += qty; else S.cart.push(line);
+        closeModal(); render();
+      };
+    };
+    m.addEventListener("click", e => {
+      const o = e.target.closest("[data-v]"); if (o && !o.disabled) { vid = o.dataset.v; draw(); }
+      const q = e.target.closest("[data-q]"); if (q) { qty += Number(q.dataset.q); draw(); }
+    });
+    m.addEventListener("change", e => { const a = e.target.closest("[data-a]"); if (a) { if (a.checked) picked.add(a.dataset.a); else picked.delete(a.dataset.a); draw(); } });
+    draw();
+  }});
+}
+function changeQty(key, d){
+  const l = S.cart.find(x => lineKey(x) === key); if (!l) return;
+  if (d > 0) { const p = S.products[l.id]; if (p && inCart(l.id, hasVariants(p) ? l.vid : undefined) >= stockOf(p, l.vid || null)) { toast(`No more ${p.name}${l.vid ? " (" + (variantOf(p, l.vid) || {}).label + ")" : ""} in stock.`, "bad"); return; } }
   l.qty += d;
-  if (l.qty <= 0) S.cart = S.cart.filter(x => x.id !== id);
+  if (l.qty <= 0) S.cart = S.cart.filter(x => x !== l);
   render();
+}
+/* Amount entry (₱ or %) used for discounts, delivery fee and deposits */
+function openAmount(o){
+  openModal(mHead(o.title) + `<div class="m-body">
+    ${o.pct ? `<div class="seg" role="group" aria-label="Type"><button data-t="amt" aria-pressed="${o.type !== "pct"}">₱ off</button><button data-t="pct" aria-pressed="${o.type === "pct"}">% off</button></div>` : ""}
+    ${o.note ? `<p class="note">${o.note}</p>` : ""}
+    <div class="field"><span>${o.label}</span>${numField("amt", {prefix: o.type === "pct" ? "%" : "₱", decimals: true, value: o.value || "", label: o.label, big: true})}</div>
+    ${padHTML()}
+    <div class="btn-row">${o.clear ? `<button class="btn ghost" data-clear>${o.clear}</button>` : ""}<button class="btn ink" data-ok>Done</button></div></div>`, {onMount(m){
+      let type = o.type === "pct" ? "pct" : "amt";
+      const pad = attachPad(m);
+      m.addEventListener("click", e => {
+        const t = e.target.closest("[data-t]");
+        if (t) { type = t.dataset.t; m.querySelectorAll("[data-t]").forEach(b => b.setAttribute("aria-pressed", b === t)); m.querySelector('[data-nf="amt"] i').textContent = type === "pct" ? "%" : "₱"; }
+        if (e.target.closest("[data-clear]")) { closeModal(); o.done(null); }
+        if (e.target.closest("[data-ok]")) {
+          const v = round2(pad.num("amt"));
+          if (type === "pct" && v > 100) { toast("A percentage can’t be over 100.", "bad"); return; }
+          if (o.max != null && type !== "pct" && v > o.max) { toast(`That’s more than ${peso(o.max)}.`, "bad"); return; }
+          closeModal(); o.done(v > 0 ? {type, value: v} : null);
+        }
+      });
+    }});
+}
+function pickupTs(){ if (!S.pre.date) return null; const t = S.pre.time || "12:00"; const d = new Date(S.pre.date + "T" + t); return isNaN(d) ? null : d.getTime(); }
+function startPay(kind){
+  if (!S.cart.length) return;
+  if (S.pre.on) {
+    if (!S.customer.trim()) { toast("Add the customer’s name for a pre-order.", "bad"); $("#cust") && $("#cust").focus(); return; }
+    if (!pickupTs()) { toast("Pick the pickup date for this pre-order.", "bad"); return; }
+  }
+  if (kind === "cash") openCash(payNow()); else openQR(payNow());
 }
 
 /* Number pad: one keypad drives every number box in a modal */
@@ -1226,9 +1597,9 @@ function bindSteppers(m, vals){
 }
 
 /* Payment */
-function openCash(){
-  const total = cartTotal();
-  openModal(mHead("Cash payment") + `<div class="m-body">
+function openCash(due, onPaid, title){
+  const total = round2(due);
+  openModal(mHead(title || "Cash payment") + `<div class="m-body">
     <div class="due"><span>Amount due</span><strong class="num">${peso(total)}</strong></div>
     <div class="field"><span>Cash received</span>${numField("recv", {prefix: "₱", decimals: true, label: "Cash received"})}</div>
     <div class="change" id="chg"></div>
@@ -1247,7 +1618,7 @@ function openCash(){
       btn.onclick = async () => {
         const r = round2(pad.num("recv"));
         btn.disabled = true; btn.textContent = "Saving…";
-        const ok = await finalize({method: "cash", cashReceived: r, change: round2(r - total)});
+        const ok = await (onPaid || finalize)({method: "cash", amount: total, cashReceived: r, change: round2(r - total)});
         if (!ok) { btn.disabled = false; btn.textContent = "Confirm payment"; }
       };
     }});
@@ -1256,7 +1627,7 @@ const refMode = () => cfg().refMode === "manual" ? "manual" : "auto";
 const refKey = r => String(r || "").replace(/[\s-]+/g, "").toUpperCase();
 function refUsedBy(ref){
   const k = refKey(ref); if (k.length < 4) return null;
-  return orderList().find(o => o.method === "qr" && o.status !== "void" && refKey(o.qrRef) === k) || null;
+  return orderList().find(o => o.status !== "void" && orderPays(o).some(x => x.method === "qr" && refKey(x.qrRef) === k)) || null;
 }
 const PROOF_PROMPT = `The image is a photo or screenshot of a payment confirmation from a Philippine bank or e-wallet app (for example GoTyme, GCash, Maya, BPI, BDO, UnionBank, InstaPay or QR Ph).
 Read it and reply with only a JSON object with exactly these keys:
@@ -1373,14 +1744,14 @@ async function openQrViewer(list, start, total, onChange){
     onChange && onChange(idx);
   }
 }
-function openQR(){
-  const total = cartTotal(), list = qrList();
+function openQR(due, onPaid, title){
+  const total = round2(due), list = qrList();
   let file = null, idx = 0;
   const slides = list.map((q, i) => `<div class="qr-slide"><div class="qr-card"><button type="button" class="qr-zoom" data-qzoom="${i}" aria-label="Show the ${esc(q.label)} QR code full screen"><img src="${esc(imgSrc(q.ref))}" alt="${esc(q.label)} QR code"><span class="qr-zoom-tip">Tap to enlarge</span></button><div class="bank">${esc(q.label)}</div>${q.account ? `<p class="acct">${esc(q.account)}</p>` : ""}</div></div>`).join("");
   const slider = !list.length ? `<div class="qr-card"><div class="qr-missing">No QR codes yet. Add them in Settings.</div></div>` :
     `<div class="qr-track" id="qtrack">${slides}</div>${list.length > 1 ? `<div class="qr-nav"><button type="button" class="qr-arrow" data-qnav="-1" aria-label="Previous QR code"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="qr-dots" aria-hidden="true">${list.map((_, i) => `<i class="${i ? "" : "on"}"></i>`).join("")}</div><button type="button" class="qr-arrow" data-qnav="1" aria-label="Next QR code"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>` : ""}`;
   const first = list[0] ? list[0].label : "payment";
-  openModal(mHead("Digital payment") + `<div class="qr-layout">
+  openModal(mHead(title || "Digital payment") + `<div class="qr-layout">
       <div>${slider}</div>
       <div class="m-body">
         <div class="due teal"><span>Customer sends exactly</span><strong class="num">${peso(total)}</strong></div>
@@ -1506,54 +1877,89 @@ function openQR(){
           catch (e) { toast(e.message || "Couldn’t read that photo. Try another.", "bad"); upd(); return; }
         }
         btn.textContent = "Saving…";
-        const ok = await finalize({method: "qr", qrRef: refVal, proof: pr, qrLabel: list[idx] ? list[idx].label : "Digital", refSource});
+        const ok = await (onPaid || finalize)({method: "qr", amount: total, qrRef: refVal, proof: pr, qrLabel: list[idx] ? list[idx].label : "Digital", refSource});
         if (!ok) upd();
       };
     }});
 }
 async function finalize(pay){
-  const items = S.cart.map(l => { const v = (S.products[l.id] || {}).vendor || HOUSE; return {pid: l.id, name: l.name, price: l.price, qty: l.qty, vendor: v, vendorName: vendorName(v)}; });
-  for (const it of items) {
-    const p = S.products[it.pid];
-    if (p && (Number(p.stock) || 0) < it.qty) { toast(`Only ${p.stock} ${p.name} left. Adjust the order first.`, "bad"); return false; }
+  const sum = cartSum();
+  const items = S.cart.map(l => { const p = S.products[l.id] || {}, v = p.vendor || HOUSE, vr = l.vid ? variantOf(p, l.vid) : null;
+    return {pid: l.id, vid: l.vid || null, vlabel: vr ? vr.label : "", addons: l.addons || [], name: l.name, price: l.price, qty: l.qty, disc: l.disc || null, vendor: v, vendorName: vendorName(v)}; });
+  const need = {};
+  items.forEach(it => { const k = it.pid + "|" + (it.vid || ""); need[k] = (need[k] || 0) + it.qty; });
+  for (const k in need) {
+    const [pid, vid] = k.split("|"), p = S.products[pid];
+    if (p && stockOf(p, vid || null) < need[k]) { toast(`Only ${stockOf(p, vid || null)} ${itemLabel(p, vid ? variantOf(p, vid) : null)} left. Adjust the order first.`, "bad"); return false; }
   }
-  const now = Date.now(), id = newId("o");
+  const now = Date.now(), id = newId("o"), amount = pay.amount != null ? round2(pay.amount) : sum.total;
+  const pre = S.pre.on ? {pickupAt: pickupTs()} : null;
+  const payment = {amount, method: pay.method, at: now, kind: pre && amount < sum.total ? "deposit" : "full",
+    cashReceived: pay.cashReceived == null ? null : pay.cashReceived, change: pay.change == null ? null : pay.change,
+    qrRef: pay.qrRef || null, proof: pay.proof || null, qrLabel: pay.qrLabel || null, refSource: pay.refSource || null};
   const order = {
     id, no: nextOrderNo(now), createdAt: now, day: dayKey(now), items,
-    total: cartTotal(), method: pay.method,
-    cashReceived: pay.cashReceived == null ? null : pay.cashReceived, change: pay.change == null ? null : pay.change,
-    qrRef: pay.qrRef || null, proof: pay.proof || null, qrLabel: pay.qrLabel || null, refSource: pay.refSource || null,
-    customer: S.customer.trim(), note: S.note.trim(), status: "paid"
+    gross: sum.gross, lineDisc: sum.lineDisc, orderDisc: S.orderDisc || null, orderDiscAmt: sum.orderDisc, discount: sum.discount, fee: sum.fee, net: sum.net, total: sum.total,
+    payments: [payment], method: payment.method, cashReceived: payment.cashReceived, change: payment.change, qrRef: payment.qrRef, proof: payment.proof, qrLabel: payment.qrLabel, refSource: payment.refSource,
+    preorder: pre, customer: S.customer.trim(), note: S.note.trim(), status: "paid"
   };
   try {
     await put("orders", id, order);
-    const moves = [];
-    for (const it of items) {
-      const p = S.products[it.pid]; if (!p) continue;
-      const from = Number(p.stock) || 0;
-      await put("products", p.id, Object.assign({}, p, {stock: from - it.qty}));
-      moves.push({type: "sale", pid: p.id, name: p.name, from, to: from - it.qty, delta: -it.qty, ref: order.no});
+    const moves = [], byProd = {};
+    items.forEach(it => { (byProd[it.pid] = byProd[it.pid] || []).push(it); });
+    for (const pid in byProd) {
+      const p = S.products[pid]; if (!p) continue;
+      if (hasVariants(p)) {
+        const vs = p.variants.map(v => Object.assign({}, v));
+        byProd[pid].forEach(it => { const v = vs.find(x => x.id === it.vid); if (!v) return; const from = Number(v.stock) || 0; v.stock = from - it.qty; moves.push({type: "sale", pid, vid: v.id, name: itemLabel(p, v), from, to: v.stock, delta: -it.qty, ref: order.no}); });
+        await put("products", pid, Object.assign({}, p, {variants: vs, stock: vs.reduce((a, v) => a + (Number(v.stock) || 0), 0)}));
+      } else {
+        const from = Number(p.stock) || 0, q = byProd[pid].reduce((a, it) => a + it.qty, 0);
+        await put("products", pid, Object.assign({}, p, {stock: from - q}));
+        moves.push({type: "sale", pid, name: p.name, from, to: from - q, delta: -q, ref: order.no});
+      }
     }
     await logAdd(moves);
   } catch (e) { return false; }
-  S.cart = []; S.customer = ""; S.note = ""; S.cartOpen = false;
+  S.cart = []; S.customer = ""; S.note = ""; S.cartOpen = false; S.orderDisc = null; S.fee = 0; S.pre = {on: false, date: "", time: "", deposit: null};
   render();
   toast(`Order ${order.no} saved.`, "ok");
   showSlip(order, true);
   return true;
 }
+async function addPayment(o, pay){
+  const cur = S.orders[o.id] || o, now = Date.now();
+  const x = {amount: round2(pay.amount), method: pay.method, at: now, kind: "balance", cashReceived: pay.cashReceived == null ? null : pay.cashReceived, change: pay.change == null ? null : pay.change,
+    qrRef: pay.qrRef || null, proof: pay.proof || null, qrLabel: pay.qrLabel || null, refSource: pay.refSource || null};
+  const upd = Object.assign({}, cur, {payments: orderPays(cur).concat([x])});
+  try { await put("orders", cur.id, upd); } catch (e) { return false; }
+  await logAdd([{type: "payment", ref: cur.no, note: `${x.method === "cash" ? "Cash" : x.qrLabel || "Digital"}, ${peso(x.amount)}`}]);
+  toast(`Balance of ${peso(x.amount)} received for order ${cur.no}.`, "ok");
+  showSlip(upd, false);
+  return true;
+}
 
 /* Slip */
+function totalRows(o){ const r = []; if (o.discount || o.fee) { r.push(["Subtotal", peso(o.gross != null ? o.gross : o.total)]); if (o.discount) r.push(["Discount" + (o.orderDisc ? " (" + discLabel(o.orderDisc) + ")" : ""), "−" + peso(o.discount)]); if (o.fee) r.push(["Delivery fee", peso(o.fee)]); } return r; }
+function payRows(o){
+  const pays = orderPays(o), split = pays.length > 1 || !!o.preorder, r = [];
+  pays.forEach(x => {
+    const what = split ? (x.kind === "deposit" ? "Deposit" : x.kind === "balance" ? "Balance paid" : "Paid") : "";
+    if (x.method === "cash") { r.push([split ? `${what}, cash` : "Cash", peso(split ? x.amount : (x.cashReceived != null ? x.cashReceived : x.amount))]); if (!split || x.change) r.push(["Change", peso(x.change || 0)]); }
+    else { r.push([split ? `${what}, ${x.qrLabel || "digital"}` : "Paid by", split ? peso(x.amount) : (x.qrLabel || "Digital")]); r.push(["Ref. No.", String(x.qrRef || "")]); }
+  });
+  return r;
+}
+const fmtPickup = ts => ts ? fmtDateTime(ts) : "";
 function slipHTML(o){
   const by = slipBy(o), sellers = orderSellers(o), socials = sellers.filter(x => x.ig);
-  const rows = o.items.map(it => `<tr><td>${it.qty} × ${esc(it.name)}<br><small>${peso(it.price)} each${by ? `, by ${esc(lineSeller(it))}` : ""}</small></td><td class="num">${peso(it.price * it.qty)}</td></tr>`).join("");
-  const pay = o.method === "cash"
-    ? `<div class="slip-pay"><span>Cash</span><span class="num">${peso(o.cashReceived)}</span></div><div class="slip-pay"><span>Change</span><span class="num">${peso(o.change)}</span></div>`
-    : `<div class="slip-pay"><span>Paid by</span><span>${esc(qrName(o))}</span></div><div class="slip-pay"><span>Ref. No.</span><span class="num">${esc(o.qrRef)}</span></div>`;
+  const rows = o.items.map(it => { const d = lineDisc(it); return `<tr><td>${it.qty} × ${esc(it.name)}<br><small>${peso(it.price)} each${by ? `, by ${esc(lineSeller(it))}` : ""}${d ? `, ${esc(discLabel(it.disc))}` : ""}</small></td><td class="num">${peso(lineGross(it) - d)}</td></tr>`; }).join("");
+  const bal = orderBalance(o);
+  const pay = totalRows(o).map(([a, b]) => `<div class="slip-pay"><span>${esc(a)}</span><span class="num">${esc(b)}</span></div>`).join("") + "<!--T-->" + payRows(o).map(([a, b]) => `<div class="slip-pay"><span>${esc(a)}</span><span class="num">${esc(b)}</span></div>`).join("") + (bal ? `<div class="slip-total slip-bal"><span>Balance due</span><span class="num">${peso(bal)}</span></div>` : "");
   const proof = o.proof ? `<div class="slip-proof"><img src="${esc(imgSrc(o.proof))}" alt="Payment proof" data-zoom><span>Payment proof on file (kept in your records, not printed). Tap to enlarge.</span></div>` : "";
   const single = sellers.length === 1, wm = single && sellers[0].logo && cfg().watermark !== false;
   const corner = !single && sellers.some(x => x.logo);
-  const status = o.status === "void" ? "" : `<div class="slip-status"><span>Status</span>${o.fulfilledAt ? `<span class="done">Fulfilled ${fmtDateTime(o.fulfilledAt)}</span>` : `<span class="todo">Paid, to fulfill</span>`}</div>`;
+  const status = o.status === "void" ? "" : `<div class="slip-status"><span>Status</span>${o.fulfilledAt ? `<span class="done">Fulfilled ${fmtDateTime(o.fulfilledAt)}</span>` : bal ? `<span class="todo">Balance due, to fulfill</span>` : `<span class="todo">Paid, to fulfill</span>`}</div>`;
   return `<div class="slip ${wm ? "wm" : ""} ${corner ? "corners" : ""}" ${wm ? `style="--wm:url('${esc(imgSrc(sellers[0].logo))}')"` : ""}>
     ${corner ? `<div class="slip-corners">${sellers.slice(0, 2).map(x => x.logo ? `<img src="${esc(imgSrc(x.logo))}" alt="${esc(x.name)} logo">` : "<span></span>").join("")}</div>` : ""}
     ${o.status === "void" ? `<div class="stamp">Voided</div>` : ""}
@@ -1562,10 +1968,12 @@ function slipHTML(o){
     <hr>
     <div class="slip-meta"><strong>Order ${esc(o.no)}</strong><span>${fmtDateTime(o.createdAt)}</span></div>
     ${o.customer ? `<div class="slip-for">For ${esc(o.customer)}</div>` : ""}
+    ${o.preorder ? `<div class="slip-for slip-pick">Pickup ${esc(fmtPickup(o.preorder.pickupAt))}</div>` : ""}
     ${o.note ? `<div class="slip-meta"><span>Note</span><span>${esc(o.note)}</span></div>` : ""}
     <hr><table>${rows}</table><hr>
+    ${pay.split("<!--T-->")[0]}
     <div class="slip-total"><span>Total</span><span class="num">${peso(o.total)}</span></div>
-    ${pay}${status}${proof}
+    ${pay.split("<!--T-->")[1]}${status}${proof}
     ${o.status === "void" ? `<hr><div class="slip-pay"><span>Voided ${o.voidAt ? fmtDateTime(o.voidAt) : ""}</span></div><div class="slip-pay"><span>Reason: ${esc(o.voidReason || "")}</span></div>` : ""}
     ${socials.length ? `<div class="slip-social"><div class="slip-social-t">Follow us for more treats</div><div class="slip-qrs">${socials.map(x => `<div class="slip-qrbox">${qrSvgTag(igURL(x.ig))}<b>@${esc(x.ig)}</b>${sellers.length > 1 && x.name.toLowerCase() !== x.ig.toLowerCase() ? `<small>${esc(x.name)}</small>` : ""}</div>`).join("")}</div></div>` : ""}
     <div class="slip-foot">${sellers.length > 1 ? "Thank you for supporting small local bakers!" : "Thank you for supporting our small bake shop!"}</div>
@@ -1576,12 +1984,15 @@ function slipText(o){
   const by = slipBy(o), sellers = orderSellers(o), L = [];
   L.push(slipBrand(o), "Order slip (not an official receipt)", `Order ${o.no}`, fmtDateTime(o.createdAt));
   if (o.customer) L.push("For " + o.customer);
+  if (o.preorder) L.push("Pickup: " + fmtPickup(o.preorder.pickupAt));
   if (o.note) L.push("Note: " + o.note);
   L.push("");
-  o.items.forEach(it => L.push(`${it.qty} x ${it.name}  ${peso(it.price * it.qty)}` + (by ? `\n   by ${lineSeller(it)}` : "")));
-  L.push("", "Total: " + peso(o.total));
-  if (o.method === "cash") L.push("Cash: " + peso(o.cashReceived), "Change: " + peso(o.change));
-  else L.push("Paid by " + qrName(o), "Ref. No. " + o.qrRef);
+  o.items.forEach(it => { const d = lineDisc(it); L.push(`${it.qty} x ${it.name}  ${peso(lineGross(it) - d)}` + (d ? ` (${discLabel(it.disc)})` : "") + (by ? `\n   by ${lineSeller(it)}` : "")); });
+  L.push("");
+  totalRows(o).forEach(([a, b]) => L.push(`${a}: ${b}`));
+  L.push("Total: " + peso(o.total));
+  payRows(o).forEach(([a, b]) => L.push(`${a}: ${b}`));
+  if (orderBalance(o)) L.push("BALANCE DUE: " + peso(orderBalance(o)));
   if (o.status === "void") L.push("VOIDED: " + (o.voidReason || ""));
   const soc = sellers.filter(x => x.ig);
   if (soc.length) { L.push("", "Follow us:"); soc.forEach(x => L.push(`@${x.ig}` + (sellers.length > 1 ? ` (${x.name})` : "") + ` ${igURL(x.ig)}`)); }
@@ -1638,6 +2049,7 @@ async function slipCanvas(o, opts){
   y += L(32); T("Order " + o.no, f(800, 22), P); if (!thermal || size === "80") T(fmtDateTime(o.createdAt), f(400, 15), W - P, "right", MUTED);
   if (thermal && size === "58") { y += L(22); T(fmtDateTime(o.createdAt), f(500, 15), P, "left", MUTED); }
   if (o.customer) wrap("For " + o.customer, f(800, 20), W - 2 * P).forEach(ln => { y += L(28); T(ln, f(800, 20), P); });
+  if (o.preorder) { y += L(28); T("Pickup " + fmtPickup(o.preorder.pickupAt), f(800, 18), P); }
   if (o.note) wrap("Note: " + o.note, f(500, 15), W - 2 * P).forEach(ln => { y += L(22); T(ln, f(500, 15), P, "left", SOFT); });
   y += L(20); rule(); y += L(6);
   const cb = opts.checks ? L(20) : 0, ix = P + (cb ? cb + L(10) : 0);
@@ -1645,15 +2057,17 @@ async function slipCanvas(o, opts){
     const lines = wrap(`${it.qty} × ${it.name}`, f(600, 17), W - ix - P - L(thermal ? 84 : 110));
     lines.forEach((ln, i) => {
       y += L(24); T(ln, f(600, 17), ix);
-      if (i === 0) { T(peso(it.price * it.qty), f(700, 17), W - P, "right"); if (cb) { const at = y; ops.push(c => { c.strokeStyle = INK; c.lineWidth = 2; c.strokeRect(P + 1, at - cb + L(3), cb, cb); }); } }
+      if (i === 0) { T(peso(lineGross(it) - lineDisc(it)), f(700, 17), W - P, "right"); if (cb) { const at = y; ops.push(c => { c.strokeStyle = INK; c.lineWidth = 2; c.strokeRect(P + 1, at - cb + L(3), cb, cb); }); } }
     });
-    wrap(`${peso(it.price)} each` + (by ? `, by ${lineSeller(it)}` : ""), f(thermal ? 500 : 400, 13), W - ix - P).forEach(ln => { y += L(20); T(ln, f(thermal ? 500 : 400, 13), ix, "left", MUTED); });
+    wrap(`${peso(it.price)} each` + (by ? `, by ${lineSeller(it)}` : "") + (lineDisc(it) ? `, ${discLabel(it.disc)}` : ""), f(thermal ? 500 : 400, 13), W - ix - P).forEach(ln => { y += L(20); T(ln, f(thermal ? 500 : 400, 13), ix, "left", MUTED); });
   });
   y += L(18); rule();
+  totalRows(o).forEach(([a, b]) => { y += L(24); pair(a, b, f(500, 15), SOFT); });
   y += L(36); pair("Total", peso(o.total), f(800, 26));
-  if (o.method === "cash") { y += L(26); pair("Cash", peso(o.cashReceived), f(500, 15), SOFT); y += L(22); pair("Change", peso(o.change), f(500, 15), SOFT); }
-  else { y += L(26); pair("Paid by", qrName(o), f(500, 15), SOFT); y += L(24); pair("Ref. No.", String(o.qrRef || ""), f(800, 16)); }
-  if (o.status !== "void") { y += L(26); pair("Status", record && o.fulfilledAt ? "Fulfilled " + fmtDateTime(o.fulfilledAt) : "Paid", f(700, 15), GOOD); }
+  payRows(o).forEach(([a, b]) => { y += L(a === "Ref. No." ? 24 : 24); pair(a, b, a === "Ref. No." ? f(800, 16) : f(500, 15), a === "Ref. No." ? INK : SOFT); });
+  const balDue = orderBalance(o);
+  if (balDue) { y += L(34); pair("Balance due", peso(balDue), f(800, 24), BAD); }
+  if (o.status !== "void") { y += L(26); pair("Status", record && o.fulfilledAt ? "Fulfilled " + fmtDateTime(o.fulfilledAt) : balDue ? "Balance due" : "Paid", f(700, 15), balDue ? BAD : GOOD); }
   if (o.status === "void") {
     y += L(20); rule();
     y += L(26); T("Voided " + (o.voidAt ? fmtDateTime(o.voidAt) : ""), f(700, 15), P, "left", BAD);
@@ -1759,6 +2173,108 @@ function systemPrint(src, size, onStart, onFail){
     if (started) onStart(); else { done(); onFail(); }
   }, 1500);
 }
+/* Print any prepared image (reports, test page) with the same options as slips */
+async function printImage(title, cv, filename, note){
+  const size = slipSize(), src = cv.toDataURL("image/png"), blob = await new Promise(res => cv.toBlob(b => res(b), "image/png"));
+  openModal(mHead(title) + `<div class="m-body">
+    <div style="max-height:52vh;overflow:auto;background:var(--surface-2);border-radius:12px;padding:10px"><img class="slip-img" src="${src}" alt="${esc(title)}" style="max-width:${size === "regular" ? "420px" : size === "58" ? "300px" : "380px"}"></div>
+    ${note ? `<p class="hint">${note}</p>` : ""}
+    <div class="btn-row"><button class="btn ${inFrame ? "banana" : "ghost"}" data-g-save>Save for printing</button>${canShareFiles ? `<button class="btn ghost" data-g-share>Send to printer app</button>` : ""}<button class="btn ${inFrame ? "ghost" : "banana"}" data-g-print>Print</button></div>
+    <p class="hint" id="gmsg" aria-live="polite"></p><button class="btn ink" data-close>Done</button></div>`, {onMount(m){
+      const msg = $("#gmsg", m), file = () => new File([blob], filename, {type: "image/png"});
+      m.addEventListener("click", async e => {
+        if (e.target.closest("[data-g-save]")) msg.textContent = (await saveFile(filename, blob, "image/png")) ? "Saved. Open it in your printer’s app (or Gallery or Photos, then Print)." : "Couldn’t save it here. Press and hold the picture to save it.";
+        if (e.target.closest("[data-g-share]") || (e.target.closest("[data-g-print]") && isIOS && canShareFiles)) {
+          try { await navigator.share({files: [file()], title}); msg.textContent = "Sent."; } catch (err) { if (!(err && err.name === "AbortError")) msg.textContent = "Sharing isn’t available here. Use “Save for printing”."; }
+          return;
+        }
+        if (e.target.closest("[data-g-print]")) { msg.textContent = "Opening the print window…"; systemPrint(src, size, () => { msg.textContent = "Sent to the print window."; }, () => { msg.textContent = "This device can’t print from here. Tap “Save for printing”, then open the image in your printer’s app."; }); }
+      });
+    }});
+}
+/* A simple receipt-style page builder shared by the report and the test page */
+function paper(size){
+  const thermal = size !== "regular", W = size === "58" ? 384 : size === "80" ? 576 : 600, SC = thermal ? 1 : 2, P = thermal ? 8 : 36, k = size === "58" ? 1.15 : size === "80" ? 1.3 : 1;
+  const INK = thermal ? "#000" : "#3A271B", MUTED = thermal ? "#000" : "#8A7767", FONT = '"Bricolage Grotesque", system-ui, sans-serif';
+  const f = (w, px) => `${w} ${Math.round(px * k)}px ${FONT}`, L = n => Math.round(n * k);
+  const ops = []; let y = P;
+  const api = {W, P, L, f, INK, MUTED, thermal,
+    gap: n => { y += L(n); },
+    text: (t, font, align, color) => { const at = y, x = align === "center" ? W / 2 : align === "right" ? W - P : P; ops.push(c => { c.font = font; c.fillStyle = color || INK; c.textAlign = align || "left"; c.fillText(t, x, at); }); },
+    pair: (a, b, font, color) => { const at = y; ops.push(c => { c.font = font; c.fillStyle = color || INK; c.textAlign = "left"; c.fillText(a, P, at); c.textAlign = "right"; c.fillText(b, W - P, at); }); },
+    rule: () => { const at = y; ops.push(c => { c.strokeStyle = INK; c.lineWidth = thermal ? 2 : 1.5; c.setLineDash([8, 6]); c.beginPath(); c.moveTo(P, at); c.lineTo(W - P, at); c.stroke(); c.setLineDash([]); }); },
+    draw: fn => { const at = y; ops.push(c => fn(c, at)); },
+    get y(){ return y; }, set y(v){ y = v; },
+    done(){ y += thermal ? L(40) : P; const cv = document.createElement("canvas"); cv.width = W * SC; cv.height = Math.ceil(y * SC); const c = cv.getContext("2d"); c.scale(SC, SC); c.fillStyle = "#fff"; c.fillRect(0, 0, W, y); c.textBaseline = "alphabetic"; ops.forEach(op => op(c)); return cv; }
+  };
+  return api;
+}
+function eodData(dayTs){
+  const d0 = startOfDay(dayTs), d1 = d0 + 864e5, k = dayKey(d0);
+  const all = orderList().filter(o => o.createdAt >= d0 && o.createdAt < d1), live = all.filter(o => o.status !== "void");
+  const pays = paysIn(d0, d1), acct = {};
+  pays.forEach(x => { const n = x.method === "cash" ? "Cash" : (x.qrLabel || "GoTyme"); acct[n] = round2((acct[n] || 0) + (Number(x.amount) || 0)); });
+  const items = {}, sellers = {};
+  live.forEach(o => o.items.forEach(i => { const p0 = S.products[i.pid], nm = p0 ? itemLabel(p0, i.vid ? variantOf(p0, i.vid) : null) : i.name, key = nm;
+    items[key] = items[key] || {qty: 0, amt: 0}; items[key].qty += i.qty; items[key].amt = round2(items[key].amt + itemNet(o, i));
+    const sv = lineSeller(i); sellers[sv] = round2((sellers[sv] || 0) + itemNet(o, i)); }));
+  const cl = S.closings[k] || null;
+  return {d0, k, orders: live.length, voided: all.length - live.length, gross: round2(live.reduce((a, o) => a + (o.gross != null ? o.gross : o.total), 0)),
+    discount: round2(live.reduce((a, o) => a + (o.discount || 0), 0)), net: round2(live.reduce((a, o) => a + orderNet(o), 0)), fees: round2(live.reduce((a, o) => a + (o.fee || 0), 0)),
+    received: round2(pays.reduce((a, x) => a + (Number(x.amount) || 0), 0)), acct, deposits: round2(pays.filter(x => x.kind === "deposit").reduce((a, x) => a + x.amount, 0)),
+    balancesIn: round2(pays.filter(x => x.kind === "balance").reduce((a, x) => a + x.amount, 0)), owed: round2(live.reduce((a, o) => a + orderBalance(o), 0)),
+    items, sellers, cl, cash: round2(acct.Cash || 0)};
+}
+async function eodCanvas(dayTs, size){
+  try { await document.fonts.ready; } catch (e) {}
+  const d = eodData(dayTs), pg = paper(size), {f, L} = pg, multi = Object.keys(d.sellers).length > 1;
+  pg.gap(30); pg.text(cfg().shopName, f(800, 28), "center");
+  pg.gap(24); pg.text("End-of-day report", f(700, 17), "center");
+  pg.gap(22); pg.text(fmtDate(d.d0), f(500, 15), "center", pg.MUTED);
+  pg.gap(16); pg.rule();
+  const row = (a, b, bold) => { pg.gap(24); pg.pair(a, b, f(bold ? 800 : 500, bold ? 18 : 15)); };
+  row("Orders", String(d.orders)); if (d.voided) row("Voided", String(d.voided));
+  row("Items before discounts", peso(d.gross)); if (d.discount) row("Discounts", "−" + peso(d.discount));
+  row("Product sales", peso(d.net), true); if (d.fees) row("Delivery fees", peso(d.fees));
+  pg.gap(16); pg.rule(); pg.gap(26); pg.text("Money received", f(700, 16));
+  Object.entries(d.acct).sort((a, b) => a[0] === "Cash" ? -1 : 1).forEach(([n, a]) => row(n, peso(a)));
+  row("Total received", peso(d.received), true);
+  if (d.deposits) row("of which deposits", peso(d.deposits)); if (d.balancesIn) row("of which balances paid", peso(d.balancesIn));
+  if (d.owed) row("Pre-order balances due", peso(d.owed));
+  pg.gap(16); pg.rule(); pg.gap(26); pg.text("Items sold", f(700, 16));
+  Object.entries(d.items).sort((a, b) => b[1].qty - a[1].qty).forEach(([n, x]) => { const lines = []; let cur = ""; const meas = document.createElement("canvas").getContext("2d"); meas.font = f(500, 15);
+    String(x.qty + " × " + n).split(" ").forEach(w => { const t = cur ? cur + " " + w : w; if (cur && meas.measureText(t).width > pg.W - 2 * pg.P - L(90)) { lines.push(cur); cur = w; } else cur = t; }); if (cur) lines.push(cur);
+    lines.forEach((ln, i) => { pg.gap(22); if (i === 0) pg.pair(ln, peso(x.amt), f(500, 15)); else pg.text(ln, f(500, 15)); }); });
+  if (multi) { pg.gap(16); pg.rule(); pg.gap(26); pg.text("By seller", f(700, 16)); Object.entries(d.sellers).forEach(([n, a]) => row(n, peso(a))); }
+  pg.gap(16); pg.rule(); pg.gap(26); pg.text("Cash drawer", f(700, 16));
+  if (d.cl) { row("Starting cash", peso(d.cl.float)); row("Cash received", peso(d.cl.cashSales)); row("Expected", peso(d.cl.expected)); row("Counted", peso(d.cl.counted), true);
+    row(Math.abs(d.cl.diff) < .01 ? "Balanced" : d.cl.diff > 0 ? "Over by" : "Short by", peso(Math.abs(d.cl.diff)), true); }
+  else { row("Cash received", peso(d.cash)); pg.gap(22); pg.text("Cash not counted yet", f(500, 14), "left", pg.MUTED); }
+  pg.gap(30); pg.text("Printed " + fmtDateTime(Date.now()), f(500, 13), "center", pg.MUTED);
+  return pg.done();
+}
+async function openEod(dayTs){ const cv = await eodCanvas(dayTs, slipSize()); printImage("End-of-day report", cv, `end-of-day-${dayKey(dayTs)}.png`, "Totals for today: sales, discounts, delivery fees, money received by cash and each account, items sold" + (hasVendors() ? ", each seller’s share" : "") + " and the cash count."); }
+async function testCanvas(size){
+  try { await document.fonts.ready; } catch (e) {}
+  const pg = paper(size), {f, L, W} = pg;
+  pg.draw((c, at) => { c.fillStyle = "#000"; c.fillRect(0, 0, 3, 40); c.fillRect(W - 3, 0, 3, 40); });
+  pg.gap(30); pg.text("Printer test page", f(800, 24), "center");
+  pg.gap(22); pg.text(size === "regular" ? "Regular printer" : size + " mm thermal paper", f(600, 15), "center");
+  pg.gap(18); pg.text("Both black edge marks above should print.", f(500, 13), "center", pg.MUTED);
+  pg.gap(14); pg.draw((c, at) => { c.fillStyle = "#000"; for (let x = 0; x < W; x += 8) c.fillRect(x, at, 1, x % 40 === 0 ? 16 : 8); });
+  pg.gap(26); pg.text("Darkness", f(700, 15));
+  pg.gap(12); pg.draw((c, at) => { const w = (W - 2 * pg.P) / 4; ["#000", "#444", "#888", "#ccc"].forEach((col, i) => { c.fillStyle = col; c.fillRect(pg.P + i * w, at, w - 6, L(28)); }); });
+  pg.gap(44); pg.text("Text sizes", f(700, 15));
+  [12, 15, 18, 24].forEach(sz => { pg.gap(sz + 8); pg.text(`${sz}px  Order 2611001  ₱1,250.50`, f(600, sz)); });
+  pg.gap(20); pg.rule();
+  pg.gap(26); pg.text("Scan test: should open Instagram", f(700, 15), "center");
+  const q = qrMake(igURL(cfg().instagram || "rngwillbake"));
+  if (q) { const n = q.getModuleCount(), box = Math.min(L(150), W - 2 * pg.P), cell = Math.floor(box / (n + 4)); pg.gap(10); pg.draw((c, at) => { const x0 = Math.round((W - cell * (n + 4)) / 2); c.fillStyle = "#fff"; c.fillRect(x0, at, cell * (n + 4), cell * (n + 4)); c.fillStyle = "#000"; for (let r = 0; r < n; r++) for (let kk = 0; kk < n; kk++) if (q.isDark(r, kk)) c.fillRect(x0 + (kk + 2) * cell, at + (r + 2) * cell, cell, cell); }); pg.y += cell * (n + 4); }
+  pg.gap(26); pg.text("If the edges are cut off, pick the other paper size", f(500, 13), "center", pg.MUTED);
+  pg.gap(18); pg.text("in Settings → Printing.", f(500, 13), "center", pg.MUTED);
+  return pg.done();
+}
+
 /* Print preview: shows the exact print copy and every way to get it onto paper.
    With "Merchant + customer", it's two steps so the merchant copy can be torn off before the customer copy prints. */
 async function printSlip(o, stepIn){
@@ -1828,6 +2344,7 @@ async function shareSlip(o, toPrinter){
 async function fulfillOrder(o){
   const cur = S.orders[o.id] || o;
   if (cur.fulfilledAt || cur.status === "void") return cur;
+  if (orderBalance(cur)) { toast("Collect the balance first.", "bad"); return null; }
   const upd = Object.assign({}, cur, {fulfilledAt: Date.now()});
   try {
     const cv = await slipCanvas(upd, {record: true});
@@ -1852,7 +2369,10 @@ function showSlip(o, fresh){
   o = S.orders[o.id] || o;
   const live = o.status !== "void";
   openModal(mHead(fresh ? "Payment confirmed" : "Order " + esc(o.no)) + `<div class="m-body">${slipHTML(o)}
-    ${live && !o.fulfilledAt ? `<div class="btn-row"><button class="btn ghost" data-print>${o.printCount ? "Reprint slip" : "Print slip"}</button><button class="btn banana" data-fulfill>Mark as fulfilled</button></div>
+    ${live && orderBalance(o) ? `<div class="due"><span>Balance due</span><strong class="num">${peso(orderBalance(o))}</strong></div>
+      <div class="btn-row"><button class="btn banana" data-bal="cash">Collect balance: cash</button><button class="btn teal" data-bal="qr">Collect balance: digital</button></div>` : ""}
+    ${live && !o.fulfilledAt ? `<div class="btn-row"><button class="btn ghost" data-print>${o.printCount ? "Reprint slip" : "Print slip"}</button><button class="btn banana" data-fulfill ${orderBalance(o) ? "disabled" : ""}>Mark as fulfilled</button></div>
+      ${orderBalance(o) ? `<p class="hint">Collect the balance before handing the order over.</p>` : ""}
       <p class="hint">Print the slip (a merchant copy with packing checkboxes for the packers, and a customer copy to hand over), then tap “Mark as fulfilled” once the order is boxed and handed over. A copy of the slip is saved with the order.</p>` : ""}
     ${live && o.fulfilledAt ? `<div class="btn-row">${o.slip ? `<button class="btn ghost" data-viewslip>View saved slip</button>` : ""}<button class="btn ghost" data-print>Reprint slip</button><button class="btn ghost" data-unfulfill>Undo fulfilled</button></div>` : ""}
     <div class="btn-row">
@@ -1870,6 +2390,8 @@ function showSlip(o, fresh){
         if (e.target.closest("[data-saveimg]")) saveSlipImage(o);
         if (e.target.closest("[data-print]")) printSlip(o);
         if (e.target.closest("[data-share]")) shareSlip(o);
+        const bb = e.target.closest("[data-bal]");
+        if (bb) { const due = orderBalance(S.orders[o.id] || o), cb = pay => addPayment(o, pay); if (bb.dataset.bal === "cash") openCash(due, cb, "Balance for order " + esc(o.no)); else openQR(due, cb, "Balance for order " + esc(o.no)); return; }
         const fb = e.target.closest("[data-fulfill]");
         if (fb) { fb.disabled = true; fb.textContent = "Saving…"; const u = await fulfillOrder(o); if (u) showSlip(u, false); else { fb.disabled = false; fb.textContent = "Mark as fulfilled"; } }
         if (e.target.closest("[data-unfulfill]")) { const u = await unfulfillOrder(o); if (u) showSlip(u, false); }
@@ -1892,9 +2414,16 @@ function openVoid(o){
           const moves = [];
           for (const it of o.items) {
             const p = S.products[it.pid]; if (!p) continue;
-            const from = Number(p.stock) || 0;
-            await put("products", p.id, Object.assign({}, p, {stock: from + it.qty}));
-            moves.push({type: "void", pid: p.id, name: p.name, from, to: from + it.qty, delta: it.qty, ref: o.no, note: why.value.trim()});
+            if (hasVariants(p) && it.vid && variantOf(p, it.vid)) {
+              const vv = p.variants.map(x => Object.assign({}, x)), v = vv.find(x => x.id === it.vid), from = Number(v.stock) || 0;
+              v.stock = from + it.qty;
+              await put("products", p.id, Object.assign({}, p, {variants: vv, stock: vv.reduce((a, x) => a + (Number(x.stock) || 0), 0)}));
+              moves.push({type: "void", pid: p.id, vid: v.id, name: itemLabel(p, v), from, to: v.stock, delta: it.qty, ref: o.no, note: why.value.trim()});
+            } else {
+              const from = Number(p.stock) || 0;
+              await put("products", p.id, Object.assign({}, p, {stock: from + it.qty}));
+              moves.push({type: "void", pid: p.id, name: p.name, from, to: from + it.qty, delta: it.qty, ref: o.no, note: why.value.trim()});
+            }
           }
           await logAdd(moves);
           closeModal(); toast(`Order ${o.no} voided.`, "ok");
@@ -1906,24 +2435,26 @@ function openVoid(o){
 /* Orders */
 function viewOrders(){
   const k = S.ui.ordDate, f = S.ui.ordFilter, q = S.ui.q.trim().toLowerCase();
-  let list = orderList().filter(o => o.day === k);
-  const paid = list.filter(o => o.status !== "void");
+  const openPre = orderList().filter(o => o.preorder && o.status !== "void" && !o.fulfilledAt).sort((a, b) => (a.preorder.pickupAt || 0) - (b.preorder.pickupAt || 0));
+  let list = f === "pre" ? openPre : orderList().filter(o => o.day === k);
+  const paid = orderList().filter(o => o.day === k && o.status !== "void");
   if (f === "cash") list = list.filter(o => o.method === "cash" && o.status !== "void");
   if (f === "qr") list = list.filter(o => o.method === "qr" && o.status !== "void");
   if (f === "void") list = list.filter(o => o.status === "void");
   if (f === "todo") list = list.filter(o => o.status !== "void" && !o.fulfilledAt);
   if (q) list = list.filter(o => [o.no, o.customer, o.qrRef, o.note].concat(o.items.map(i => i.name)).join(" ").toLowerCase().includes(q));
-  const sum = paid.reduce((s, o) => s + o.total, 0);
+  const sum = paid.reduce((a, o) => a + orderNet(o), 0);
   const todo = paid.filter(o => !o.fulfilledAt).length;
-  const seg = [["all", "All"], ["todo", `To fulfill${todo ? " (" + todo + ")" : ""}`], ["cash", "Cash"], ["qr", "Digital"], ["void", "Voided"]].map(([v, l]) =>
+  const seg = [["all", "All"], ["todo", `To fulfill${todo ? " (" + todo + ")" : ""}`], ["pre", `Pre-orders${openPre.length ? " (" + openPre.length + ")" : ""}`], ["cash", "Cash"], ["qr", "Digital"], ["void", "Voided"]].map(([v, l]) =>
     `<button data-act="ofilter" data-v="${v}" aria-pressed="${f === v}">${l}</button>`).join("");
   return `<section class="page">
     <div class="page-head"><h1>Orders</h1><div class="seg" role="group" aria-label="Filter">${seg}</div></div>
     <div class="toolbar"><input type="date" id="o-date" value="${k}" aria-label="Day"><input class="grow" id="o-q" value="${esc(S.ui.q)}" placeholder="Search customer, item or reference" autocomplete="off"></div>
-    <p class="summary">${fmtDate(new Date(k + "T00:00").getTime())}: ${plural(paid.length, "paid order")}, ${peso(sum)} in sales${todo ? `, ${todo} still to fulfill` : ""}.</p>
+    <p class="summary">${f === "pre" ? `${plural(openPre.length, "open pre-order")}, soonest pickup first. Balances still due: ${peso(openPre.reduce((a, o) => a + orderBalance(o), 0))}.` : `${fmtDate(new Date(k + "T00:00").getTime())}: ${plural(paid.length, "paid order")}, ${peso(sum)} in sales${todo ? `, ${todo} still to fulfill` : ""}.`}</p>
+    ${S.role === "expeditor" && cfg().expClose !== false ? `<div style="margin-bottom:12px"><button class="btn banana" data-act="close-day">Close the day: count cash and print the report</button></div>` : ""}
     ${list.length ? `<div class="list">${list.map(o => `<button class="orow ${o.status === "void" ? "void" : ""}" data-act="open-order" data-id="${esc(o.id)}">
         <span class="o-no">#${esc(o.no)}</span><span class="o-time">${fmtTime(o.createdAt)}</span>
-        <span class="o-who">${esc(o.customer || "Walk-in")}<small>${plural(o.items.reduce((s, i) => s + i.qty, 0), "item")}${o.status === "void" ? "" : o.fulfilledAt ? `, <span class="ful-done">fulfilled</span>` : `, <span class="ful-todo">to fulfill</span>`}</small></span>
+        <span class="o-who">${esc(o.customer || "Walk-in")}<small>${plural(o.items.reduce((a, i) => a + i.qty, 0), "item")}${o.preorder ? `, pickup ${esc(fmtPickup(o.preorder.pickupAt))}` : ""}${o.status === "void" ? "" : o.fulfilledAt ? `, <span class="ful-done">fulfilled</span>` : `, <span class="ful-todo">to fulfill</span>`}${orderBalance(o) ? `, <span class="ful-todo">balance ${peso(orderBalance(o))}</span>` : ""}</small></span>
         <span class="pill ${o.status === "void" ? "void" : o.method}">${o.status === "void" ? "Voided" : o.method === "cash" ? "Cash" : esc(qrName(o))}</span>
         <strong class="num">${peso(o.total)}</strong></button>`).join("")}</div>`
       : `<div class="empty">${q || f !== "all" ? "No orders match this filter." : "No orders on this day."}</div>`}
@@ -1939,20 +2470,29 @@ function viewDash(){
   if (!multi || (S.ui.dSeller !== "all" && !vlist.some(v => v.id === S.ui.dSeller))) S.ui.dSeller = "all";
   const VF = S.ui.dSeller;
   const mine = it => VF === "all" || lineVendor(it) === VF;
-  const amtOf = o => VF === "all" ? o.total : round2(o.items.filter(mine).reduce((s, i) => s + i.qty * i.price, 0));
+  const amtOf = o => VF === "all" ? orderNet(o) : round2(o.items.filter(mine).reduce((a, i) => a + itemNet(o, i), 0));
   const orders = paidIn(from, to).filter(o => o.items.some(mine));
-  const sales = orders.reduce((s, o) => s + amtOf(o), 0);
-  const items = orders.reduce((s, o) => s + o.items.filter(mine).reduce((a, i) => a + i.qty, 0), 0);
-  const cash = orders.filter(o => o.method === "cash"), qr = orders.filter(o => o.method === "qr");
-  const cashAmt = cash.reduce((s, o) => s + amtOf(o), 0), qrAmt = qr.reduce((s, o) => s + amtOf(o), 0);
-  let settle = "";
+  const sales = orders.reduce((a, o) => a + amtOf(o), 0);
+  const items = orders.reduce((a, o) => a + o.items.filter(mine).reduce((x, i) => x + i.qty, 0), 0);
+  const pays = paysIn(from, to).filter(x => VF === "all" || x.order.items.some(mine));
+  const byAcct = {};
+  pays.forEach(x => { const k = x.method === "cash" ? "Cash" : (x.qrLabel || "GoTyme"); byAcct[k] = byAcct[k] || {n: 0, amt: 0}; byAcct[k].n++; byAcct[k].amt += Number(x.amount) || 0; });
+  const received = Object.values(byAcct).reduce((a, x) => a + x.amt, 0);
+  const cashAmt = (byAcct.Cash || {}).amt || 0, qrAmt = received - cashAmt;
+  const discGiven = orders.reduce((a, o) => a + (o.discount || 0), 0), fees = orders.reduce((a, o) => a + (o.fee || 0), 0);
+  const owed = orderList().filter(o => o.status !== "void").reduce((a, o) => a + orderBalance(o), 0);
+  const pickupsToday = orderList().filter(o => o.preorder && o.status !== "void" && !o.fulfilledAt && o.preorder.pickupAt >= today0 && o.preorder.pickupAt < today0 + 864e5).sort((a, b) => a.preorder.pickupAt - b.preorder.pickupAt);
+  let settle = "", anyU = false;
   if (multi && VF === "all") {
     const rowsV = vlist.map(v => {
       let n = 0, amt = 0, c = 0, d = 0;
-      orders.forEach(o => o.items.forEach(i => { if (lineVendor(i) !== v.id) return; const a = i.qty * i.price; n += i.qty; amt += a; if (o.method === "cash") c += a; else d += a; }));
-      return `<tr><td><span class="t-seller" style="--v:${vendorColor(v.id)};color:var(--ink)"><i></i>${esc(v.name)}</span></td><td>${n}</td><td>${peso(c)}</td><td>${peso(d)}</td><td class="end">${peso(amt)}</td></tr>`;
+      let u = 0;
+      orders.forEach(o => { const ps = orderPays(o), tot = o.total || 1, fc = ps.filter(x => x.method === "cash").reduce((a, x) => a + x.amount, 0) / tot, fd = ps.filter(x => x.method !== "cash").reduce((a, x) => a + x.amount, 0) / tot;
+        o.items.forEach(i => { if (lineVendor(i) !== v.id) return; const a = itemNet(o, i); n += i.qty; amt += a; c += a * fc; d += a * fd; u += a * Math.max(0, 1 - fc - fd); }); });
+      anyU = anyU || u > .009;
+      return `<tr><td><span class="t-seller" style="--v:${vendorColor(v.id)};color:var(--ink)"><i></i>${esc(v.name)}</span></td><td>${n}</td><td>${peso(c)}</td><td>${peso(d)}</td><td>${peso(u)}</td><td class="end">${peso(amt)}</td></tr>`;
     }).join("");
-    settle = `<div class="card c-12"><h2>Sales by seller</h2><div class="scrollx"><table class="sumtab num"><thead><tr><th>Seller</th><th>Items</th><th>Paid in cash</th><th>Paid digitally</th><th>Total</th></tr></thead><tbody>${rowsV}</tbody></table></div>
+    settle = `<div class="card c-12"><h2>Sales by seller</h2><div class="scrollx"><table class="sumtab num"><thead><tr><th>Seller</th><th>Items</th><th>Paid in cash</th><th>Paid digitally</th><th>Not yet paid</th><th>Total</th></tr></thead><tbody>${rowsV}</tbody></table></div>
       <p class="note" style="margin-top:10px">Use this to settle up after a collab: it shows how much of each seller’s sales came in as cash and how much went to your digital accounts.</p></div>`;
   }
 
@@ -1972,13 +2512,17 @@ function viewDash(){
   const bars = buckets.map(b => `<div class="bar ${b.v ? "" : "zero"}" title="${esc(b.title || b.label)}: ${peso(b.v)}"><i style="height:${Math.max(1, b.v / maxB * 100)}%"></i><small>${b.label}</small></div>`).join("");
 
   const by = {};
-  orders.forEach(o => o.items.filter(mine).forEach(i => { const k = i.pid || i.name; by[k] = by[k] || {name: i.name, qty: 0, amt: 0, cat: (S.products[i.pid] || {}).category}; by[k].qty += i.qty; by[k].amt += i.qty * i.price; }));
+  orders.forEach(o => o.items.filter(mine).forEach(i => { const p0 = S.products[i.pid], k = (i.pid || i.name) + "|" + (i.vid || ""); by[k] = by[k] || {name: p0 ? itemLabel(p0, i.vid ? variantOf(p0, i.vid) : null) : i.name, qty: 0, amt: 0, cat: (p0 || {}).category}; by[k].qty += i.qty; by[k].amt += itemNet(o, i); }));
   const best = Object.values(by).sort((a, b) => b.qty - a.qty).slice(0, 8);
   const maxQ = Math.max(1, ...best.map(b => b.qty));
 
-  const watch = productList().filter(p => (VF === "all" || (p.vendor || HOUSE) === VF) && p.active !== false && (Number(p.stock) || 0) <= lowAt(p)).sort((a, b) => a.stock - b.stock);
-
-  const todayCash = paidIn(today0, to).filter(o => o.method === "cash").reduce((s, o) => s + o.total, 0);
+  const watch = [];
+  productList().filter(p => (VF === "all" || (p.vendor || HOUSE) === VF) && p.active !== false).forEach(p => {
+    if (hasVariants(p)) p.variants.forEach(v => { const st = Number(v.stock) || 0; if (st <= lowAt(p)) watch.push({name: itemLabel(p, v), st}); });
+    else { const st = Number(p.stock) || 0; if (st <= lowAt(p)) watch.push({name: p.name, st}); }
+  });
+  watch.sort((a, b) => a.st - b.st);
+  const todayCash = cashIn(today0, today0 + 864e5);
   const closings = Object.values(S.closings).sort((a, b) => b.day < a.day ? -1 : 1).slice(0, 7);
   const tc = S.closings[dayKey(now)];
   const seg = [["today", "Today"], ["7", "Last 7 days"], ["30", "Last 30 days"]].map(([v, l]) => `<button data-act="period" data-v="${v}" aria-pressed="${P === v}">${l}</button>`).join("");
@@ -1995,31 +2539,31 @@ function viewDash(){
       </div>
       <div class="card c-8"><h2>${P === "today" ? "Sales by hour" : "Sales by day"}</h2><div class="bars" role="img" aria-label="Sales chart">${bars}</div></div>
       <div class="card c-4"><h2>How customers paid</h2>
-        <div class="split">${sales ? `<div class="s-cash" style="width:${cashAmt / sales * 100}%"></div><div class="s-qr" style="width:${qrAmt / sales * 100}%"></div>` : ""}</div>
-        <div class="legend">
-          <div><span><i style="background:var(--banana)"></i>Cash (${cash.length})</span><b class="num">${peso(cashAmt)}</b></div>
-          <div><span><i style="background:var(--teal)"></i>Digital (${qr.length})</span><b class="num">${peso(qrAmt)}</b></div>
-        </div></div>
+        <div class="split">${received ? `<div class="s-cash" style="width:${cashAmt / received * 100}%"></div><div class="s-qr" style="width:${qrAmt / received * 100}%"></div>` : ""}</div>
+        <div class="legend">${Object.keys(byAcct).length ? Object.entries(byAcct).sort((a, b) => a[0] === "Cash" ? -1 : b[0] === "Cash" ? 1 : b[1].amt - a[1].amt).map(([k, x]) => `<div><span><i style="background:${k === "Cash" ? "var(--banana)" : "var(--teal)"}"></i>${esc(k)} (${x.n})</span><b class="num">${peso(x.amt)}</b></div>`).join("") : `<p class="note">No payments yet.</p>`}</div>
+        <p class="note" style="margin-top:8px">Money received in this period, including deposits and delivery fees.</p>
+        ${discGiven || fees || owed ? `<div style="margin-top:8px">${discGiven ? `<div class="mini"><span>Discounts given</span><b class="num">${peso(discGiven)}</b></div>` : ""}${fees ? `<div class="mini"><span>Delivery fees</span><b class="num">${peso(fees)}</b></div>` : ""}${owed ? `<div class="mini"><span>Pre-order balances still due</span><b class="num">${peso(owed)}</b></div>` : ""}</div>` : ""}</div>
+      ${pickupsToday.length ? `<div class="card c-12"><h2>Pickups today</h2>${pickupsToday.map(o => `<div class="mini"><span>${fmtTime(o.preorder.pickupAt)} · #${esc(o.no)} ${esc(o.customer || "")}</span><b class="num">${orderBalance(o) ? "Balance " + peso(orderBalance(o)) : "Paid"}</b></div>`).join("")}</div>` : ""}
       <div class="card c-6"><h2>Best sellers</h2>${best.length ? `<div class="best">${best.map(b => `<div class="best-row" style="--c:${catColor(b.cat)}"><span>${esc(b.name)}</span><span class="num"><b>${b.qty}</b> <small>sold, ${peso(b.amt)}</small></span><span class="track"><i style="width:${b.qty / maxQ * 100}%"></i></span></div>`).join("")}</div>` : `<div class="empty">No sales in this period yet.</div>`}</div>
-      <div class="card c-6"><h2>Running low</h2>${watch.length ? watch.map(p => `<div class="mini"><span>${esc(p.name)}</span>${(Number(p.stock) || 0) <= 0 ? `<span class="pill out">Sold out</span>` : `<span class="pill low num">${p.stock} left</span>`}</div>`).join("") : `<p class="note">Everything is well stocked.</p>`}
+      <div class="card c-6"><h2>Running low</h2>${watch.length ? watch.map(w => `<div class="mini"><span>${esc(w.name)}</span>${w.st <= 0 ? `<span class="pill out">Sold out</span>` : `<span class="pill low num">${w.st} left</span>`}</div>`).join("") : `<p class="note">Everything is well stocked.</p>`}
         <div style="margin-top:12px"><button class="btn ghost sm" data-act="goto" data-tab="stock">Restock items</button></div></div>
       ${settle}
       <div class="card c-12"><h2>Cash drawer</h2>
-        <div class="mini"><span>Cash sales today</span><b class="num">${peso(todayCash)}</b></div>
+        <div class="mini"><span>Cash received today</span><b class="num">${peso(todayCash)}</b></div>
         ${tc ? `<div class="mini"><span>Counted at close (${fmtTime(tc.at)})</span><b class="num">${peso(tc.counted)}</b></div><div class="mini"><span>Difference</span><span class="${Math.abs(tc.diff) < .01 ? "diff-ok" : "diff-bad"} num">${tc.diff > 0 ? "+" : ""}${peso(tc.diff)}${Math.abs(tc.diff) < .01 ? ", balanced" : tc.diff > 0 ? " over" : " short"}</span></div>` : ""}
-        <div style="margin:12px 0"><button class="btn banana" data-act="close-day">${tc ? "Recount today’s cash" : "Count today’s cash"}</button></div>
+        <div class="btn-row" style="margin:12px 0"><button class="btn banana" data-act="close-day">${tc ? "Recount today’s cash" : "Count today’s cash"}</button><button class="btn ghost" data-act="eod">End-of-day report</button></div>
         ${closings.length ? `<h3 style="font-size:15px;color:var(--muted);margin:8px 0 4px">Recent counts</h3>` + closings.map(cl => `<div class="mini"><span>${fmtDate(new Date(cl.day + "T00:00").getTime())}</span><span class="num">Expected ${peso(cl.expected)}, counted ${peso(cl.counted)} <span class="${Math.abs(cl.diff) < .01 ? "diff-ok" : "diff-bad"}">(${cl.diff > 0 ? "+" : ""}${peso(cl.diff)})</span></span></div>`).join("") : ""}
       </div>
     </div></section>`;
 }
 function openCloseDay(){
   const now = Date.now(), k = dayKey(now), today0 = startOfDay(now);
-  const cashSales = paidIn(today0, today0 + 864e5).filter(o => o.method === "cash").reduce((s, o) => s + o.total, 0);
+  const cashSales = cashIn(today0, today0 + 864e5);
   const prev = S.closings[k] || {};
   openModal(mHead("Count today’s cash") + `<div class="m-body">
     <div class="row2">
       <div class="field"><span>Starting cash (float)</span>${numField("float", {prefix: "₱", decimals: true, value: prev.float != null ? prev.float : "", label: "Starting cash"})}</div>
-      <div class="field"><span>Cash sales today</span><div class="numfield num" style="cursor:default;opacity:.7"><i>₱</i><b>${round2(cashSales).toLocaleString("en-PH")}</b></div></div>
+      <div class="field"><span>Cash received today</span><div class="numfield num" style="cursor:default;opacity:.7"><i>₱</i><b>${round2(cashSales).toLocaleString("en-PH")}</b></div></div>
     </div>
     <div class="field"><span>Cash counted in the drawer</span>${numField("counted", {prefix: "₱", decimals: true, value: prev.counted != null ? prev.counted : "", label: "Cash counted"}).replace("data-nf=", "data-start=\"1\" data-nf=")}</div>
     <div class="change" id="res"></div>
@@ -2038,74 +2582,111 @@ function openCloseDay(){
       pad = attachPad(m, calc); calc();
       $("#save", m).onclick = async () => {
         const r = calc(); if (!r) { toast("Enter the cash you counted first.", "bad"); return; }
-        if (!(await pinOk())) return;
+        if (!(S.role === "expeditor" && cfg().expClose !== false) && !(await pinOk())) return;
         try {
           await put("closings", k, {day: k, at: Date.now(), float: round2(pad.num("float")), cashSales: round2(cashSales), expected: r.exp, counted: r.c, diff: r.d, note: $("#cnote", m).value.trim()});
-          await logAdd([{type: "cash", note: `Counted ${peso(r.c)}, expected ${peso(r.exp)}, ${Math.abs(r.d) < .01 ? "balanced" : (r.d > 0 ? "over by " : "short by ") + peso(Math.abs(r.d))}`}]); closeModal(); toast("Cash count saved.", "ok");
+          await logAdd([{type: "cash", note: `Counted ${peso(r.c)}, expected ${peso(r.exp)}, ${Math.abs(r.d) < .01 ? "balanced" : (r.d > 0 ? "over by " : "short by ") + peso(Math.abs(r.d))}`}]); toast("Cash count saved.", "ok"); openEod(Date.now());
         } catch (e) {}
       };
     }});
 }
 
 /* Stock */
+const expCanRestock = () => S.role === "expeditor" && cfg().expRestock !== false;
 function viewStock(){
-  const list = productList();
+  const list = productList(), exp = S.role === "expeditor";
   const groups = {};
   list.forEach(p => { const c = p.category || "Other"; (groups[c] = groups[c] || []).push(p); });
+  const stockCell = st => `<span class="p-stock num ${st <= 0 ? "diff-bad" : ""}">${st}<small>in stock</small></span>`;
   const body = list.length ? Object.keys(groups).map(c => `<div class="cat-title" style="--c:${catColor(c)}"><i></i>${esc(c)}</div><div class="list">${groups[c].map(p => {
-      const st = Number(p.stock) || 0;
+      const st = stockOf(p), lowCol = st > 0 && st <= lowAt(p) ? "color:var(--warn)" : "";
+      const sizes = hasVariants(p) ? `<span class="p-sizes">${p.variants.map(v => `<span class="${(Number(v.stock) || 0) <= lowAt(p) ? "low" : ""}">${esc(v.label)}: <b class="num">${Number(v.stock) || 0}</b></span>`).join("")}</span>` : "";
       return `<div class="prow" style="--c:${catColor(p.category)}"><span class="dot"></span>
-        <span class="p-name">${esc(p.name)} ${p.active === false ? `<span class="pill hidden">Hidden</span>` : ""}<small class="num">${peso(p.price)}${hasVendors() ? `, sold by ${esc(vendorName(p.vendor))}` : ""}</small></span>
-        <span class="p-stock num ${st <= 0 ? "diff-bad" : st <= lowAt(p) ? "" : ""}" style="${st > 0 && st <= lowAt(p) ? "color:var(--warn)" : ""}">${st}<small>in stock</small></span>
+        <span class="p-name">${esc(p.name)} ${p.active === false ? `<span class="pill hidden">Hidden</span>` : ""}<small class="num">${hasVariants(p) ? p.variants.map(v => esc(v.label) + " " + peso(v.price)).join(", ") : peso(p.price)}${hasAddons(p) ? `, ${plural(p.addons.length, "add-on")}` : ""}${hasVendors() ? `, sold by ${esc(vendorName(p.vendor))}` : ""}</small>${sizes}</span>
+        <span class="p-stock num ${st <= 0 ? "diff-bad" : ""}" style="${lowCol}">${st}<small>in stock</small></span>
         <span class="p-price"></span>
-        <span class="acts"><button class="btn banana sm" data-act="restock" data-id="${esc(p.id)}">Restock</button><button class="btn ghost sm" data-act="edit" data-id="${esc(p.id)}">Edit</button></span></div>`;
+        <span class="acts"><button class="btn banana sm" data-act="restock" data-id="${esc(p.id)}">Restock</button>${exp ? "" : `<button class="btn ghost sm" data-act="edit" data-id="${esc(p.id)}">Edit</button>`}</span></div>`;
     }).join("")}</div>`).join("")
-    : `<div class="empty"><p>Your menu is empty. Add your first item, like banana pudding or a box of crinkles.</p><button class="btn ink" data-act="new-item">Add item</button></div>`;
-  return `<section class="page"><div class="page-head"><h1>Stock & menu</h1><button class="btn ink" data-act="new-item">Add item</button></div>${body}</section>`;
+    : `<div class="empty"><p>${exp ? "No items yet. The admin adds items to the menu." : "Your menu is empty. Add your first item, like banana pudding or a box of crinkles."}</p>${exp ? "" : `<button class="btn ink" data-act="new-item">Add item</button>`}</div>`;
+  return `<section class="page"><div class="page-head"><h1>${exp ? "Stock" : "Stock & menu"}</h1>${exp ? "" : `<button class="btn ink" data-act="new-item">Add item</button>`}</div>
+    ${exp ? `<p class="summary">Use Restock after baking. Every restock is recorded in History with your role, for the admin to review.</p>` : ""}${body}</section>`;
 }
-function openProduct(p){
-  const isNew = !p; p = p || {name: "", category: S.cat !== "All" ? S.cat : "", price: "", stock: 0, lowAt: 5, active: true};
+function openProduct(p, draft){
+  const isNew = !p || !p.id;
+  const base = p || {name: "", category: S.cat !== "All" ? S.cat : "", price: "", stock: 0, lowAt: 5, active: true};
+  const D = draft || {name: base.name || "", category: base.category || "", vendor: base.vendor, price: base.price === "" || base.price == null ? "" : base.price, stock: Number(base.stock) || 0, low: lowAt(base), active: base.active !== false,
+    variants: (base.variants || []).map(v => Object.assign({}, v)), addons: (base.addons || []).map(a => Object.assign({}, a))};
   const cats = [...new Set(productList().map(x => x.category || "Other"))];
+  const hasV = D.variants.length > 0;
   openModal(mHead(isNew ? "Add item" : "Edit item") + `<div class="m-body">
-    <label class="field"><span>Name</span><input id="pn" value="${esc(p.name)}" placeholder="e.g. Banana pudding (8 oz)" ${isNew ? "autofocus" : ""}></label>
-    <label class="field"><span>Category</span><input id="pc" value="${esc(p.category || "")}" list="catlist" placeholder="e.g. Crinkles"><datalist id="catlist">${cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist></label>
-    ${hasVendors() ? `<label class="field"><span>Sold by</span><select id="pv" style="border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;font-size:16px;color:var(--ink)">${vendorList().map(v => `<option value="${esc(v.id)}" ${(p.vendor || (isNew && S.seller !== "all" ? S.seller : HOUSE)) === v.id ? "selected" : ""}>${esc(v.name)}${v.house ? " (you)" : ""}</option>`).join("")}</select></label>` : ""}
-    <div class="field"><span>Price</span>${numField("price", {prefix: "₱", decimals: true, value: p.price, label: "Price"})}</div>
+    <label class="field"><span>Name</span><input id="pn" value="${esc(D.name)}" placeholder="e.g. Banana pudding" ${isNew && !draft ? "autofocus" : ""}></label>
+    <label class="field"><span>Category</span><input id="pc" value="${esc(D.category)}" list="catlist" placeholder="e.g. Crinkles"><datalist id="catlist">${cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist></label>
+    ${hasVendors() ? `<label class="field"><span>Sold by</span><select id="pv" style="border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;font-size:16px;color:var(--ink)">${vendorList().map(v => `<option value="${esc(v.id)}" ${(D.vendor || (isNew && S.seller !== "all" ? S.seller : HOUSE)) === v.id ? "selected" : ""}>${esc(v.name)}${v.house ? " (you)" : ""}</option>`).join("")}</select></label>` : ""}
+    ${hasV ? "" : `<div class="field"><span>Price</span>${numField("price", {prefix: "₱", decimals: true, value: D.price, label: "Price"})}</div>`}
+    <div class="opt-edit"><h3>Sizes or versions <small>(optional, each with its own price and stock)</small></h3>
+      ${D.variants.map((v, i) => `<div class="opt-row"><input data-vl="${i}" value="${esc(v.label || "")}" placeholder="e.g. 8 oz" aria-label="Size name">${numField("vp" + i, {prefix: "₱", decimals: true, value: v.price, label: "Price of " + (v.label || "size")})}${stepField("vs" + i, Number(v.stock) || 0, "Stock of " + (v.label || "size"))}<button type="button" class="x" data-vrm="${i}" aria-label="Remove size">Remove</button></div>`).join("")}
+      <button type="button" class="btn ghost sm" data-vadd>Add a size</button></div>
+    <div class="opt-edit"><h3>Add-ons <small>(optional extras, e.g. extra Biscoff)</small></h3>
+      ${D.addons.map((a, i) => `<div class="opt-row addon"><input data-al="${i}" value="${esc(a.label || "")}" placeholder="e.g. Extra Biscoff" aria-label="Add-on name">${numField("ap" + i, {prefix: "+₱", decimals: true, value: a.price, label: "Price of " + (a.label || "add-on")})}<button type="button" class="x" data-arm="${i}" aria-label="Remove add-on">Remove</button></div>`).join("")}
+      <button type="button" class="btn ghost sm" data-aadd>Add an add-on</button></div>
+    <p class="hint">Tap a price box, then use the keypad.</p>
     ${padHTML()}
     <div class="row2">
-      <div class="field"><span>In stock</span>${stepField("stock", Number(p.stock) || 0, "In stock")}</div>
-      <div class="field"><span>Warn me when stock drops to</span>${stepField("low", lowAt(p), "Low stock warning")}</div>
+      ${hasV ? "" : `<div class="field"><span>In stock</span>${stepField("stock", D.stock, "In stock")}</div>`}
+      <div class="field"><span>Warn me when stock drops to</span>${stepField("low", D.low, "Low stock warning")}</div>
     </div>
-    <label class="check"><input type="checkbox" id="pa" ${p.active !== false ? "checked" : ""}><span>Show on the Sell screen</span></label>
+    <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="pa" ${D.active ? "checked" : ""}><span>Show on the Sell screen</span></label>
     <button class="btn ink big" id="save">${isNew ? "Add item" : "Save changes"}</button>
     ${isNew ? "" : `<button class="btn ghost" id="del" style="color:var(--bad)">Delete item</button>`}
   </div>`, {onMount(m){
       const pad = attachPad(m);
-      const vals = {stock: Number(p.stock) || 0, low: lowAt(p)};
+      const vals = {stock: D.stock, low: D.low};
+      D.variants.forEach((v, i) => { vals["vs" + i] = Number(v.stock) || 0; });
       bindSteppers(m, vals);
+      const collect = () => {
+        D.name = $("#pn", m).value; D.category = $("#pc", m).value; D.active = $("#pa", m).checked; if ($("#pv", m)) D.vendor = $("#pv", m).value;
+        if (!hasV) { D.price = pad.raw("price") === "" ? "" : round2(pad.num("price")); D.stock = vals.stock; }
+        D.low = vals.low;
+        D.variants.forEach((v, i) => { v.label = m.querySelector(`[data-vl="${i}"]`).value.trim(); v.price = pad.raw("vp" + i) === "" ? "" : round2(pad.num("vp" + i)); v.stock = vals["vs" + i]; });
+        D.addons.forEach((a, i) => { a.label = m.querySelector(`[data-al="${i}"]`).value.trim(); a.price = pad.raw("ap" + i) === "" ? 0 : round2(pad.num("ap" + i)); });
+      };
+      m.addEventListener("click", e => {
+        if (e.target.closest("[data-vadd]")) { collect(); if (!D.variants.length) D.variants.push({id: newId("v"), label: "", price: D.price === "" ? "" : D.price, stock: D.stock}); D.variants.push({id: newId("v"), label: "", price: "", stock: 0}); openProduct(p, D); }
+        const vr = e.target.closest("[data-vrm]"); if (vr) { collect(); const gone = D.variants.splice(Number(vr.dataset.vrm), 1)[0]; if (!D.variants.length && gone) { D.price = gone.price; D.stock = Number(gone.stock) || 0; } openProduct(p, D); }
+        if (e.target.closest("[data-aadd]")) { collect(); D.addons.push({id: newId("a"), label: "", price: 0}); openProduct(p, D); }
+        const ar = e.target.closest("[data-arm]"); if (ar) { collect(); D.addons.splice(Number(ar.dataset.arm), 1); openProduct(p, D); }
+      });
       $("#save", m).onclick = async () => {
-        const name = $("#pn", m).value.trim();
+        collect();
+        const name = D.name.trim();
         if (!name) { toast("Give the item a name.", "bad"); return; }
-        if (pad.raw("price") === "") { toast("Enter a price.", "bad"); pad.focus("price"); return; }
+        if (!hasV && D.price === "") { toast("Enter a price.", "bad"); pad.focus("price"); return; }
+        if (D.variants.some(v => !v.label)) { toast("Give every size a name.", "bad"); return; }
+        if (D.variants.some(v => v.price === "")) { toast("Enter a price for every size.", "bad"); return; }
+        if (new Set(D.variants.map(v => v.label.toLowerCase())).size !== D.variants.length) { toast("Two sizes have the same name.", "bad"); return; }
+        if (D.addons.some(a => !a.label)) { toast("Give every add-on a name, or remove it.", "bad"); return; }
         if (!(await pinOk())) return;
-        const id = p.id || newId("p");
-        const data = Object.assign({}, p, {id, name, category: $("#pc", m).value.trim() || "Other", price: round2(pad.num("price")),
-          stock: vals.stock, lowAt: vals.low,
-          active: $("#pa", m).checked, sort: p.sort || Date.now(), vendor: $("#pv", m) ? $("#pv", m).value : (p.vendor || HOUSE)});
-        try { const old = isNew ? null : (S.products[id] || p); await put("products", id, data); await logAdd(itemChanges(old, data)); closeModal(); toast(isNew ? "Item added." : "Item saved.", "ok"); } catch (e) {}
+        const id = (p && p.id) || newId("p"), old = p && p.id ? (S.products[id] || p) : null;
+        const variants = D.variants.map(v => ({id: v.id, label: v.label, price: round2(v.price), stock: Math.max(0, Number(v.stock) || 0)}));
+        const addons = D.addons.map(a => ({id: a.id, label: a.label, price: round2(a.price)}));
+        const data = Object.assign({}, old || {}, {id, name, category: D.category.trim() || "Other", lowAt: D.low, active: D.active, sort: (old && old.sort) || Date.now(), vendor: D.vendor || (old && old.vendor) || HOUSE,
+          variants, addons, price: variants.length ? Math.min(...variants.map(v => v.price)) : round2(D.price), stock: variants.length ? variants.reduce((a, v) => a + v.stock, 0) : D.stock});
+        try { await put("products", id, data); await logAdd(itemChanges(old, data)); closeModal(); toast(isNew ? "Item added." : "Item saved.", "ok"); } catch (e) {}
       };
       const del = $("#del", m);
       if (del) { let armed = false; del.onclick = async () => {
         if (!armed) { armed = true; del.textContent = "Tap again to delete for good"; return; }
         if (!(await pinOk())) return;
-        const gone = S.products[p.id] || p, left = Number(gone.stock) || 0; S.cart = S.cart.filter(l => l.id !== p.id); await removeDoc("products", p.id); await logAdd([{type: "deleted", pid: p.id, name: gone.name, from: left, to: 0, delta: -left}]); closeModal(); toast("Item deleted.");
+        const gone = S.products[p.id] || p, left = stockOf(gone); S.cart = S.cart.filter(l => l.id !== p.id); await removeDoc("products", p.id); await logAdd([{type: "deleted", pid: p.id, name: gone.name, from: left, to: 0, delta: -left}]); closeModal(); toast("Item deleted.");
       }; }
     }});
 }
-function openRestock(p){
-  const cur = Number(p.stock) || 0;
+function openRestock(p, vidIn){
+  const vs = hasVariants(p), vid = vs ? (vidIn && variantOf(p, vidIn) ? vidIn : p.variants[0].id) : null, v = vs ? variantOf(p, vid) : null;
+  const cur = vs ? Number(v.stock) || 0 : Number(p.stock) || 0;
   openModal(mHead("Restock " + esc(p.name)) + `<div class="m-body">
-    <div class="due"><span>Now in stock</span><strong class="num">${cur}</strong></div>
+    ${vs ? `<div class="field"><span>Which size?</span><div class="seg" role="group" aria-label="Size">${p.variants.map(x => `<button data-rv="${esc(x.id)}" aria-pressed="${x.id === vid}">${esc(x.label)} (${Number(x.stock) || 0})</button>`).join("")}</div></div>` : ""}
+    <div class="due"><span>Now in stock${v ? " (" + esc(v.label) + ")" : ""}</span><strong class="num">${cur}</strong></div>
     <div class="field"><span>How many did you bake? Slide, or tap the number to type it.</span>
       <div class="stepper-row"><button type="button" class="stepbtn" data-step="-1" aria-label="One less">−</button>${numField("qty", {big: true, label: "Quantity"})}<button type="button" class="stepbtn" data-step="1" aria-label="One more">+</button></div>
     </div>
@@ -2134,6 +2715,7 @@ function openRestock(p){
       pad = attachPad(m, () => { syncSlider(Math.floor(pad.num("qty"))); calc(); });
       sl.addEventListener("input", () => { padWrap.hidden = true; pad.set("qty", sl.value === "0" ? "" : sl.value); syncSlider(Number(sl.value)); calc(); });
       m.addEventListener("click", e => {
+        const rv = e.target.closest("[data-rv]"); if (rv && rv.dataset.rv !== vid) { openRestock(S.products[p.id] || p, rv.dataset.rv); return; }
         const st = e.target.closest("[data-step]");
         if (st) { const v = Math.max(0, Math.floor(pad.num("qty")) + Number(st.dataset.step)); pad.set("qty", v ? String(v) : ""); syncSlider(v); calc(); }
         if (e.target.closest("[data-nf]")) padWrap.hidden = !padWrap.hidden;
@@ -2141,8 +2723,13 @@ function openRestock(p){
       syncSlider(0); calc();
       $("#save", m).onclick = async () => {
         const n = calc();
-        if (!(await pinOk())) return;
-        try { await put("products", p.id, Object.assign({}, p, {stock: n, restockedAt: Date.now()})); await logAdd([{type: "restock", pid: p.id, name: p.name, from: cur, to: n, delta: n - cur}]); closeModal(); toast(`${p.name}: ${n} in stock.`, "ok"); } catch (e) {}
+        if (!expCanRestock() && !(await pinOk())) return;
+        const p2 = S.products[p.id] || p;
+        let data;
+        if (vs) { const vv = p2.variants.map(x => x.id === vid ? Object.assign({}, x, {stock: n}) : Object.assign({}, x)); data = Object.assign({}, p2, {variants: vv, stock: vv.reduce((a, x) => a + (Number(x.stock) || 0), 0), restockedAt: Date.now()}); }
+        else data = Object.assign({}, p2, {stock: n, restockedAt: Date.now()});
+        const nm = itemLabel(p2, v);
+        try { await put("products", p.id, data); await logAdd([{type: "restock", pid: p.id, vid: vid || undefined, name: nm, from: cur, to: n, delta: n - cur}]); closeModal(); toast(`${nm}: ${n} in stock.`, "ok"); } catch (e) {}
       };
     }});
 }
@@ -2161,14 +2748,20 @@ function viewSettings(){
       <button class="btn ink" data-act="save-shop">Save shop details</button>
       </div>
     <div class="card"><h2>Log in and PINs</h2>
-      <div class="mini"><span>Owner PIN</span><b>${hasOwner() ? "Set" : "Not set"}</b></div>
-      <div class="mini"><span>Staff PIN</span><b>${hasStaff() ? "Set" : "Not set"}</b></div>
+      <label class="field"><span>Name on the log-in screen</span><input id="s-sys" value="${esc(sysName())}" autocomplete="off"></label>
+      <button class="btn ghost" data-act="save-sys">Save name</button>
+      <div class="mini"><span>Admin PIN</span><b>${hasOwner() ? "Set" : "Not set"}</b></div>
+      <div class="mini"><span>Expeditor PIN</span><b>${hasStaff() ? "Set" : "Not set"}</b></div>
       <div class="mini"><span>Recovery code</span><b>${c.recHash ? "Created" : "Not created"}</b></div>
-      <p class="note">The app always opens on a log-in screen. The owner PIN opens everything and is asked before any change is saved. The staff PIN lets helpers sell, take payments, print and fulfil orders.</p>
-      <div class="btn-row"><button class="btn ghost" data-act="pin-set">Change owner PIN</button><button class="btn ghost" data-act="staff-set">${hasStaff() ? "Change staff PIN" : "Set a staff PIN"}</button>${hasStaff() ? `<button class="btn ghost" data-act="staff-off" style="color:var(--bad)">Remove staff PIN</button>` : ""}</div>
+      <p class="note">The app always opens on a log-in screen. The app opens by asking who’s using it. Admin (admin PIN) gets every screen and the admin PIN is asked before any change is saved. Expeditor (expeditor PIN, or the admin PIN) gets a simple selling view: Sell and Orders, for taking payments, printing and fulfilling orders.</p>
+      <div class="btn-row"><button class="btn ghost" data-act="pin-set">Change admin PIN</button><button class="btn ghost" data-act="staff-set">${hasStaff() ? "Change expeditor PIN" : "Set an expeditor PIN"}</button>${hasStaff() ? `<button class="btn ghost" data-act="staff-off" style="color:var(--bad)">Remove expeditor PIN</button>` : ""}</div>
       <button class="btn ghost" data-act="rec-new">${c.recHash ? "Make a new recovery code" : "Create a recovery code"}</button>
       <div class="field"><span>Lock the app after no taps for</span><div class="seg" role="group" aria-label="Auto-lock">${[[5, "5 min"], [15, "15 min"], [30, "30 min"], [60, "1 hour"], [0, "Only when reopened"]].map(([v, l]) => `<button data-act="autolock" data-v="${v}" aria-pressed="${autoLockMin() === v}">${l}</button>`).join("")}</div></div>
-      <p class="note">Tap <b>Lock</b> at the top any time to lock it yourself.</p></div>
+      <p class="note">Tap <b>Lock / Switch</b> at the top any time to lock it yourself or hand over to someone else.</p>
+      <h3 style="font-size:16px;margin-top:6px">What expeditors can do</h3>
+      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-exp-restock" ${c.expRestock !== false ? "checked" : ""}><span>Restock items after baking (no admin PIN). They can only add stock; editing prices, items or exact counts stays with the admin.</span></label>
+      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-exp-close" ${c.expClose !== false ? "checked" : ""}><span>Count the cash and print the end-of-day report at closing.</span></label>
+      <p class="note">Everything expeditors do is recorded in History with their role. Filter History by “By expeditors” to review.</p></div>
     <div class="card"><h2>Selling</h2>
       <div class="field"><span>Tapping an item that’s already in the order</span><div class="seg" role="group" aria-label="Second tap">${[["toggle", "Removes it"], ["add", "Adds one more"]].map(([v, l]) => `<button data-act="tapmode" data-v="${v}" aria-pressed="${(tapToggles() ? "toggle" : "add") === v}">${l}</button>`).join("")}</div></div>
       <p class="note">${tapToggles() ? "Use + and − in the current order to change how many. A removed item can be brought back with Undo for a few seconds." : "Each tap adds one more. Use − in the current order to take one away."}</p></div>
@@ -2177,10 +2770,11 @@ function viewSettings(){
       <p class="note">Thermal sizes print in black only at the paper’s exact width. Most Bluetooth thermal printers print from their own app: tap Print slip, then “Save for printing” (or “Send to printer app” where available) and open the image in that app.</p>
       <div class="field"><span>Copies each time you print</span><div class="seg" role="group" aria-label="Copies">${[["both", "Merchant + customer"], ["merchant", "Merchant only"], ["customer", "Customer only"]].map(([v, l]) => `<button data-act="printcopies" data-v="${v}" aria-pressed="${printCopies() === v}">${l}</button>`).join("")}</div></div>
       <p class="note">With both, printing is two steps: the merchant copy prints first so you can tear it off cleanly, then tap “Next: print customer copy”. The merchant copy stays with the order for packing and your records (no QR codes, to save paper). The customer copy is their claim slip and keepsake, with your Instagram QR codes and no checkboxes.</p>
-      <label class="check"><input type="checkbox" id="s-checks" ${c.packChecks !== false ? "checked" : ""}><span>Packing checkboxes beside each item on the merchant copy</span></label>
-      <label class="check"><input type="checkbox" id="s-wm" ${c.watermark !== false ? "checked" : ""}><span>Logo watermark on single-seller slips (screen and regular printer; thermal prints the logo at the top instead)</span></label>
-      <label class="check"><input type="checkbox" id="s-slipcopy" ${c.slipCopy !== false ? "checked" : ""}><span>When an order is fulfilled, also save a copy of its slip to this device</span></label>
-      <p class="note">Printing a slip a second time marks both copies “Reprint 2” at the top so packers don’t box it twice.</p></div>
+      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-checks" ${c.packChecks !== false ? "checked" : ""}><span>Packing checkboxes beside each item on the merchant copy</span></label>
+      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-wm" ${c.watermark !== false ? "checked" : ""}><span>Logo watermark on single-seller slips (screen and regular printer; thermal prints the logo at the top instead)</span></label>
+      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-slipcopy" ${c.slipCopy !== false ? "checked" : ""}><span>When an order is fulfilled, also save a copy of its slip to this device</span></label>
+      <p class="note">Printing a slip a second time marks both copies “Reprint 2” at the top so packers don’t box it twice.</p>
+      <button class="btn ghost" data-act="test-page">Print a test page</button></div>
     <div class="card"><h2>Payment QR codes</h2>
       <p class="note">Add one for each bank or e-wallet you accept. At checkout you swipe between them, in this order.</p>
       ${qrs.length ? `<div class="qr-list">${qrs.map((q, i) => `<div class="qr-item"><img src="${esc(imgSrc(q.ref))}" alt="${esc(q.label)} QR code"><b>${esc(q.label)}</b>${q.account ? `<small>${esc(q.account)}</small>` : ""}<div class="acts"><button class="btn ghost sm" data-act="qr-edit" data-i="${i}">Edit</button><button class="btn ghost sm" data-act="qr-del" data-i="${i}" style="color:var(--bad)">Remove</button></div></div>`).join("")}</div>` : `<div class="qr-prev">No QR codes yet</div>`}
@@ -2205,7 +2799,9 @@ function viewSettings(){
       <label class="field"><span>Google client ID (from your free Google Cloud project; see the README)</span><input id="s-gcid" value="${esc(g.clientId || "")}" placeholder="1234…apps.googleusercontent.com" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
       <div class="btn-row"><button class="btn ghost" data-act="gd-save">Save client ID</button>${g.clientId ? `<button class="btn banana" data-act="drive-backup">${g.connected ? "Back up to Drive now" : "Connect Google Drive"}</button>` : ""}${g.connected ? `<button class="btn ghost" data-act="gd-off" style="color:var(--bad)">Disconnect</button>` : ""}</div></div>`; })() : ""}
     <div class="card"><h2>About this app</h2>
-      <p class="note">rngwillbake POS, version 1.0 (November 2026). ${S.mode === "cloud" ? "Running in the Claude app, synced to your account." : OFFLINE ? "Running as the offline app on this device: no internet, account or Claude usage needed." : "Running in device-only mode."} Keep regular backups; the backup file is also how your records move into the installable app.</p></div>
+      <div class="mini"><span>Version</span><b>${APP_VERSION}</b></div>
+      <details class="changes"><summary>What’s new in each version</summary>${CHANGES.map(([v, d, items]) => `<div class="chg"><b>${v}</b> <small>${d}</small><ul>${items.map(x => `<li>${x}</li>`).join("")}</ul></div>`).join("")}</details>
+      <p class="note">rngwillbake POS. ${S.mode === "cloud" ? "Running in the Claude app, synced to your account." : OFFLINE ? "Running as the offline app on this device: no internet, account or Claude usage needed." : "Running in device-only mode."} Keep regular backups; the backup file is also how your records move into the installable app.</p></div>
     <div class="card"><h2>About order slips</h2>
       <p class="note">Slips are for your own records and your customer’s reference. They are not BIR official receipts or invoices. When you register with BIR, your registered invoices take over that role.</p></div>
   </div></section>`;
@@ -2220,12 +2816,12 @@ async function exportCSV(kind){
       rows.push([d.day, fmtTime(e.t), LOG_LABEL[e.type] || e.type, e.name || "", e.from == null ? "" : e.from, e.to == null ? "" : e.to, e.delta == null ? "" : e.delta, e.ref || "", e.note || ""])));
     name = "history-" + dayKey(Date.now()) + ".csv";
   } else if (kind === "orders") {
-    rows = [["Order no", "Date", "Time", "Customer", "Note", "Items", "Total", "Payment", "Cash received", "Change", "Payment ref", "Status", "Void reason"]];
-    os.forEach(o => rows.push([o.no, o.day, fmtTime(o.createdAt), o.customer, o.note, o.items.map(i => i.qty + " x " + i.name).join("; "), o.total, payName(o), o.cashReceived, o.change, o.qrRef, o.status, o.voidReason]));
+    rows = [["Order no", "Date", "Time", "Customer", "Note", "Items", "Subtotal", "Discount", "Delivery fee", "Total", "Paid", "Balance due", "Payment", "Payment refs", "Pickup", "Status", "Fulfilled", "Void reason"]];
+    os.forEach(o => rows.push([o.no, o.day, fmtTime(o.createdAt), o.customer, o.note, o.items.map(i => i.qty + " x " + i.name).join("; "), o.gross != null ? o.gross : o.total, o.discount || 0, o.fee || 0, o.total, orderPaid(o), orderBalance(o), payNames(o), orderPays(o).map(x => x.qrRef).filter(Boolean).join("; "), o.preorder ? fmtPickup(o.preorder.pickupAt) : "", o.status, o.fulfilledAt ? fmtDateTime(o.fulfilledAt) : "", o.voidReason]));
     name = "orders-" + dayKey(Date.now()) + ".csv";
   } else {
-    rows = [["Order no", "Date", "Item", "Category", "Seller", "Qty", "Unit price", "Line total", "Payment", "Status"]];
-    os.forEach(o => o.items.forEach(i => rows.push([o.no, o.day, i.name, (S.products[i.pid] || {}).category || "", i.vendorName || vendorName(i.vendor), i.qty, i.price, round2(i.qty * i.price), payName(o), o.status])));
+    rows = [["Order no", "Date", "Item", "Size", "Add-ons", "Category", "Seller", "Qty", "Unit price", "Line total", "Line discount", "Net after all discounts", "Payment", "Status"]];
+    os.forEach(o => o.items.forEach(i => rows.push([o.no, o.day, (S.products[i.pid] || {}).name || i.name, i.vlabel || "", (i.addons || []).map(a => a.label).join("; "), (S.products[i.pid] || {}).category || "", i.vendorName || vendorName(i.vendor), i.qty, i.price, lineGross(i), lineDisc(i), itemNet(o, i), payNames(o), o.status])));
     name = "items-sold-" + dayKey(Date.now()) + ".csv";
   }
   const csv = "\ufeff" + rows.map(r => r.map(csvCell).join(",")).join("\r\n");
@@ -2439,14 +3035,14 @@ async function restoreBackup(file){
     }});
 }
 
-/* ---------- owner & staff PINs, recovery code ---------- */
+/* ---------- owner & expeditor PINs, recovery code ---------- */
 function openPinChange(){
   pinOk().then(ok => {
     if (!ok) return;
-    openModal(mHead("Change owner PIN") + `<div class="m-body">${newPinHTML("New owner PIN", "Save PIN")}</div>`, {onMount(m){
+    openModal(mHead("Change admin PIN") + `<div class="m-body">${newPinHTML("New admin PIN", "Save PIN")}</div>`, {onMount(m){
       newPinForm(m, async pin => {
-        if (hasStaff() && await checkStaff(pin)) { $("#np-msg", m).textContent = "That’s the staff PIN. Pick a different one."; $("#np-save", m).disabled = false; return; }
-        await storeOwnerPin(pin); await logAdd([{type: "settings", note: "Owner PIN changed"}]); closeModal(); toast("Owner PIN saved.", "ok");
+        if (hasStaff() && await checkStaff(pin)) { $("#np-msg", m).textContent = "That’s the expeditor PIN. Pick a different one."; $("#np-save", m).disabled = false; return; }
+        await storeOwnerPin(pin); await logAdd([{type: "settings", note: "Admin PIN changed"}]); closeModal(); toast("Admin PIN saved.", "ok");
       });
     }});
   });
@@ -2455,11 +3051,11 @@ function openStaffPin(){
   pinOk().then(ok => {
     if (!ok) return;
     const had = hasStaff();
-    openModal(mHead(had ? "Change staff PIN" : "Set a staff PIN") + `<div class="m-body"><p class="note">Staff can sell, take payments, print and fulfil orders. Changes still need the owner PIN.</p>${newPinHTML("Staff PIN", "Save staff PIN")}</div>`, {onMount(m){
+    openModal(mHead(had ? "Change expeditor PIN" : "Set an expeditor PIN") + `<div class="m-body"><p class="note">Expeditors can sell, take payments, print and fulfil orders. Changes still need the admin PIN.</p>${newPinHTML("Expeditor PIN", "Save expeditor PIN")}</div>`, {onMount(m){
       newPinForm(m, async pin => {
-        if (await checkOwner(pin)) { $("#np-msg", m).textContent = "That’s the owner PIN. Pick a different one."; $("#np-save", m).disabled = false; return; }
+        if (await checkOwner(pin)) { $("#np-msg", m).textContent = "That’s the admin PIN. Pick a different one."; $("#np-save", m).disabled = false; return; }
         await put("settings", null, Object.assign({}, S.settings, await pinFields("staff", pin)));
-        await logAdd([{type: "settings", note: had ? "Staff PIN changed" : "Staff PIN set"}]); closeModal(); toast("Staff PIN saved.", "ok");
+        await logAdd([{type: "settings", note: had ? "Expeditor PIN changed" : "Expeditor PIN set"}]); closeModal(); toast("Expeditor PIN saved.", "ok");
       });
     }});
   });
@@ -2467,7 +3063,7 @@ function openStaffPin(){
 async function removeStaffPin(){
   if (!(await pinOk())) return;
   const st = Object.assign({}, S.settings); delete st.staffHash; delete st.staffSalt; delete st.staffLen;
-  try { await put("settings", null, st); await logAdd([{type: "settings", note: "Staff PIN removed"}]); toast("Staff PIN removed. Only the owner PIN opens the app now.", "ok"); } catch (e) {}
+  try { await put("settings", null, st); await logAdd([{type: "settings", note: "Expeditor PIN removed"}]); toast("Expeditor PIN removed. Only the admin PIN opens the app now.", "ok"); } catch (e) {}
 }
 function showNewRecovery(){
   pinOk().then(async ok => {
@@ -2520,6 +3116,21 @@ async function removeSeller(id){
   } catch (e) {}
 }
 
+/* ---------- app revisions ---------- */
+const APP_VERSION = "1.8.1 (November 2026)";
+const CHANGES = [
+  ["1.8.1", "Nov 2026", ["Press and slide across tabs and options to pick one"]],
+  ["1.8", "Nov 2026", ["“Lock / Switch” button with a clear confirm; no PIN-free way back after locking", "Log-in screen named “RWB Sales & Orders System” (editable)", "iOS-style touches: on/off switches, sliding selection, glass header, swipe a line to remove it, bottom sheets on phones"]],
+  ["1.7", "Nov 2026", ["Pre-orders with pickup date and deposits; collect the balance at pickup", "Discounts on an item or the whole order, in pesos or percent", "Delivery fee line, kept separate from sales", "Item options: sizes with their own price and stock, plus add-ons", "End-of-day report you can print", "Printer test page", "Expeditors can restock and close the day; History shows who made each change"]],
+  ["1.6", "Nov 2026", ["Log-in screen: Expeditor or Admin", "Admin and expeditor PINs, recovery code, auto-lock", "Updates show up right away; “new version ready” bar"]],
+  ["1.5", "Nov 2026", ["Reference number read from the payment photo", "Fraud checks: wrong amount, unfinished transfer, reused reference", "Offline tablet app, Google Drive backup, iPad support", "Full-screen QR codes; tap an item again to remove it"]],
+  ["1.4", "Nov 2026", ["Fulfilled status and saved slip copies", "Co-branded slips with logos and Instagram QR codes", "Thermal slip sizes, packing checkboxes, reprint marks", "Merchant and customer copies, printed in two steps"]],
+  ["1.3", "Nov 2026", ["Collab sellers and sales split by seller", "Full backup and restore", "Several payment QR codes; slip save, print and share"]],
+  ["1.2", "Nov 2026", ["Admin PIN on every change", "History of every change", "Order numbers by year and month"]],
+  ["1.1", "Nov 2026", ["Number pad, restock slider, plus/minus buttons", "rngwillbake colours"]],
+  ["1.0", "Nov 2026", ["Selling with cash and QR payments, order slips, stock and dashboard"]]
+];
+
 /* ---------- payment QR codes ---------- */
 function openQrEdit(i){
   const list = qrList().slice(), q = i == null ? null : list[i];
@@ -2563,16 +3174,18 @@ async function removeQr(i){
 }
 
 /* ---------- history ---------- */
-const LOG_LABEL = {reprint: "Reprinted", fulfill: "Fulfilled", unfulfill: "Unfulfilled", sale: "Sold", void: "Voided", restock: "Restocked", adjust: "Stock edited", added: "Item added", deleted: "Item deleted", price: "Price changed", rename: "Renamed", item: "Item updated", settings: "Settings", cash: "Cash count"};
-const LOG_KIND = {reprint: "sale", fulfill: "sale", unfulfill: "edit", sale: "sale", void: "void", restock: "stock", adjust: "stock", added: "stock", deleted: "stock", price: "edit", rename: "edit", item: "edit", settings: "edit", cash: "edit"};
+const LOG_LABEL = {payment: "Balance paid", reprint: "Reprinted", fulfill: "Fulfilled", unfulfill: "Unfulfilled", sale: "Sold", void: "Voided", restock: "Restocked", adjust: "Stock edited", added: "Item added", deleted: "Item deleted", price: "Price changed", rename: "Renamed", item: "Item updated", settings: "Settings", cash: "Cash count"};
+const LOG_KIND = {payment: "sale", reprint: "sale", fulfill: "sale", unfulfill: "edit", sale: "sale", void: "void", restock: "stock", adjust: "stock", added: "stock", deleted: "stock", price: "edit", rename: "edit", item: "edit", settings: "edit", cash: "edit"};
 async function logAdd(list){
   list = (list || []).filter(Boolean);
   if (!list.length) return;
   const now = Date.now(), k = dayKey(now), cur = S.logs[k] || {};
-  const doc = {day: k, entries: (cur.entries || []).concat(list.map(e => Object.assign({t: now}, e)))};
+  const doc = {day: k, entries: (cur.entries || []).concat(list.map(e => Object.assign({t: now, by: S.role || null}, e)))};
   try { await put("logs", k, doc); } catch (e) { /* put already told the user */ }
 }
 function itemChanges(old, n){
+  if (old && JSON.stringify((old.variants || []).map(v => [v.label, v.price])) !== JSON.stringify((n.variants || []).map(v => [v.label, v.price]))) setTimeout(() => logAdd([{type: "item", pid: n.id, name: n.name, note: (n.variants || []).length ? "Sizes: " + n.variants.map(v => `${v.label} ${peso(v.price)}`).join(", ") : "Sizes removed"}]), 0);
+  if (old && JSON.stringify((old.addons || []).map(a => [a.label, a.price])) !== JSON.stringify((n.addons || []).map(a => [a.label, a.price]))) setTimeout(() => logAdd([{type: "item", pid: n.id, name: n.name, note: (n.addons || []).length ? "Add-ons: " + n.addons.map(a => `${a.label} +${peso(a.price)}`).join(", ") : "Add-ons removed"}]), 0);
   if (!old) return [{type: "added", pid: n.id, name: n.name, from: 0, to: n.stock, delta: n.stock, note: `New item at ${peso(n.price)}`}];
   const L = [], base = {pid: n.id, name: n.name}, os = Number(old.stock) || 0;
   if (old.name !== n.name) L.push(Object.assign({}, base, {type: "rename", from: old.name, to: n.name}));
@@ -2586,6 +3199,7 @@ function itemChanges(old, n){
 }
 function logDetail(e){
   switch (e.type) {
+    case "payment": return [`Order ${e.ref}`, `Balance received: ${e.note}`];
     case "reprint": return [`Order ${e.ref}`, `Slip reprinted (${e.note})`];
     case "fulfill": return [`Order ${e.ref}`, "Marked fulfilled" + (e.note ? ` for ${e.note}` : "")];
     case "unfulfill": return [`Order ${e.ref}`, "Moved back to “to fulfill”"];
@@ -2608,8 +3222,9 @@ function viewHistory(){
   const sum = {}, order = [];
   all.forEach(e => {
     if (!e.pid || LOG_KIND[e.type] === "edit") return;
-    let r = sum[e.pid];
-    if (!r) { r = sum[e.pid] = {name: e.name, start: e.from == null ? 0 : e.from, baked: 0, sold: 0, voided: 0, adj: 0, end: 0}; order.push(e.pid); }
+    const sk = e.pid + (e.vid ? "|" + e.vid : "");
+    let r = sum[sk];
+    if (!r) { r = sum[sk] = {pid: e.pid, name: e.name, start: e.from == null ? 0 : e.from, baked: 0, sold: 0, voided: 0, adj: 0, end: 0}; order.push(sk); }
     r.name = e.name;
     if (e.type === "restock") r.baked += e.delta || 0;
     else if (e.type === "sale") r.sold -= e.delta || 0;
@@ -2617,7 +3232,7 @@ function viewHistory(){
     else r.adj += (e.to || 0) - (e.from || 0);
     if (e.to != null) r.end = e.to;
   });
-  const sumIds = order.filter(id => !it || id === it);
+  const sumIds = order.filter(id => !it || sum[id].pid === it);
   const signed = n => n ? (n > 0 ? "+" : "−") + Math.abs(n) : "—";
   const table = sumIds.length ? `<div class="card" style="margin-bottom:14px"><h2>Stock for the day</h2><div class="scrollx"><table class="sumtab num">
       <thead><tr><th>Item</th><th>Start</th><th>Baked</th><th>Sold</th><th>Voided</th><th>Edited</th><th>End</th></tr></thead>
@@ -2625,12 +3240,13 @@ function viewHistory(){
   let list = all.slice().reverse();
   if (f === "stock") list = list.filter(e => LOG_KIND[e.type] !== "edit");
   if (f === "edit") list = list.filter(e => LOG_KIND[e.type] === "edit");
+  if (f === "exp") list = list.filter(e => e.by === "expeditor");
   if (it) list = list.filter(e => e.pid === it);
   const names = {};
   productList().forEach(p => { names[p.id] = p.name; });
   all.forEach(e => { if (e.pid && !names[e.pid]) names[e.pid] = e.name + " (deleted)"; });
-  const seg = [["all", "All"], ["stock", "Stock moves"], ["edit", "Edits"]].map(([v, l]) => `<button data-act="hfilter" data-v="${v}" aria-pressed="${f === v}">${l}</button>`).join("");
-  const rows = list.map(e => { const d = logDetail(e); return `<div class="lrow"><span class="l-time">${fmtTime(e.t)}</span><span class="pill lt-${LOG_KIND[e.type] || "edit"}">${LOG_LABEL[e.type] || "Change"}</span><span class="l-what"><b>${esc(d[0])}</b><small>${esc(d[1])}</small></span>${e.delta ? `<span class="l-delta num ${e.delta > 0 ? "pos-d" : "neg-d"}">${signed(e.delta)}</span>` : "<span></span>"}</div>`; }).join("");
+  const seg = [["all", "All"], ["stock", "Stock moves"], ["edit", "Edits"], ["exp", "By expeditors"]].map(([v, l]) => `<button data-act="hfilter" data-v="${v}" aria-pressed="${f === v}">${l}</button>`).join("");
+  const rows = list.map(e => { const d = logDetail(e); return `<div class="lrow"><span class="l-time">${fmtTime(e.t)}${e.by ? `<small class="l-by ${e.by}">${e.by === "expeditor" ? "Expeditor" : "Admin"}</small>` : ""}</span><span class="pill lt-${LOG_KIND[e.type] || "edit"}">${LOG_LABEL[e.type] || "Change"}</span><span class="l-what"><b>${esc(d[0])}</b><small>${esc(d[1])}</small></span>${e.delta ? `<span class="l-delta num ${e.delta > 0 ? "pos-d" : "neg-d"}">${signed(e.delta)}</span>` : "<span></span>"}</div>`; }).join("");
   return `<section class="page">
     <div class="page-head"><h1>History</h1><div class="seg" role="group" aria-label="Filter">${seg}</div></div>
     <div class="toolbar"><input type="date" id="h-date" value="${k}" aria-label="Day">
@@ -2654,8 +3270,13 @@ $("#view").addEventListener("click", e => {
   const id = el.dataset.id, act = el.dataset.act;
   switch (act) {
     case "add": addToCart(id); break;
-    case "inc": changeQty(id, 1); break;
-    case "dec": changeQty(id, -1); break;
+    case "inc": changeQty(el.dataset.key, 1); break;
+    case "dec": changeQty(el.dataset.key, -1); break;
+    case "line-adj": { const l = S.cart.find(x => lineKey(x) === el.dataset.key); if (!l) break; openAmount({title: "Discount on " + esc(l.name), label: "Discount on this line", pct: true, type: l.disc && l.disc.type, value: l.disc && l.disc.value, clear: l.disc ? "Remove discount" : "", max: lineGross(l), done: d => { l.disc = d; render(); }}); break; }
+    case "order-disc": openAmount({title: "Order discount", label: "Discount on the whole order", pct: true, type: S.orderDisc && S.orderDisc.type, value: S.orderDisc && S.orderDisc.value, clear: S.orderDisc ? "Remove discount" : "", note: "Taken off after any item discounts. It shows on both slips.", done: d => { S.orderDisc = d; render(); }}); break;
+    case "order-fee": openAmount({title: "Delivery fee", label: "Delivery fee (e.g. Grab Express)", value: S.fee || "", clear: S.fee ? "Remove fee" : "", note: "Kept separate from product sales in your reports.", done: d => { S.fee = d ? d.value : 0; render(); }}); break;
+    case "order-pre": S.pre.on = !S.pre.on; if (!S.pre.on) S.pre.deposit = null; render(); break;
+    case "order-dep": { const t = cartTotal(); openAmount({title: "Deposit now", label: "Amount paid today", value: S.pre.deposit != null ? S.pre.deposit : "", max: t, clear: S.pre.deposit != null ? "Pay in full instead" : "", note: `Order total ${peso(t)}. The rest is collected at pickup.`, done: d => { S.pre.deposit = d && d.value < t ? d.value : null; render(); }}); break; }
     case "cat": S.cat = el.dataset.cat; render(); break;
     case "seller": S.seller = el.dataset.v; S.cat = "All"; render(); break;
     case "dseller": S.ui.dSeller = el.dataset.v; render(); break;
@@ -2665,15 +3286,17 @@ $("#view").addEventListener("click", e => {
       if (el.dataset.armed) { removeSeller(el.dataset.id); break; }
       el.dataset.armed = "1"; el.textContent = "Tap again"; break;
     }
-    case "clear-cart": S.cart = []; render(); break;
+    case "clear-cart": S.cart = []; S.orderDisc = null; S.fee = 0; S.pre = {on: false, date: "", time: "", deposit: null}; render(); break;
     case "toggle-cart": S.cartOpen = !S.cartOpen; render(); break;
-    case "pay-cash": if (S.cart.length) openCash(); break;
-    case "pay-qr": if (S.cart.length) openQR(); break;
-    case "goto": { const t = el.dataset.tab; const go = () => { S.tab = t; render(); }; if (LOCKED[t]) requirePin(go); else go(); break; }
+    case "pay-cash": startPay("cash"); break;
+    case "pay-qr": startPay("qr"); break;
+    case "goto": { const t = el.dataset.tab; if (S.role === "expeditor" && !["sell", "orders"].concat(cfg().expRestock !== false ? ["stock"] : []).includes(t)) break; const go = () => { S.tab = t; render(); }; if (LOCKED[t]) requirePin(go); else go(); break; }
     case "ofilter": S.ui.ordFilter = el.dataset.v; render(); break;
     case "open-order": { const o = S.orders[id]; if (o) showSlip(o, false); break; }
     case "period": S.ui.period = el.dataset.v; render(); break;
     case "close-day": openCloseDay(); break;
+    case "eod": openEod(Date.now()); break;
+    case "test-page": testCanvas(slipSize()).then(cv => printImage("Printer test page", cv, "printer-test.png", "Checks paper width, darkness, text sizes and QR scanning.")); break;
     case "new-item": openProduct(null); break;
     case "edit": openProduct(S.products[id]); break;
     case "restock": openRestock(S.products[id]); break;
@@ -2691,6 +3314,7 @@ $("#view").addEventListener("click", e => {
       break;
     }
     case "pin-set": openPinChange(); break;
+    case "save-sys": { const v = $("#s-sys").value.trim() || SYS_DEFAULT, was = sysName(); if (v === was) { toast("Nothing changed."); break; } pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {sysName: v})).then(() => { toast("Name saved.", "ok"); logAdd([{type: "settings", note: `Log-in screen name: ${was} \u2192 ${v}`}]); }).catch(() => {}); }); break; }
     case "drive-backup": driveBackup(true); break;
     case "gd-save": {
       const id = $("#s-gcid").value.trim();
@@ -2726,6 +3350,8 @@ $("#view").addEventListener("input", e => {
   const t = e.target;
   if (t.id === "cust") S.customer = t.value;
   else if (t.id === "note") S.note = t.value;
+  else if (t.id === "pre-date") S.pre.date = t.value;
+  else if (t.id === "pre-time") S.pre.time = t.value;
   else if (t.id === "o-q") { S.ui.q = t.value; render(); }
 });
 $("#view").addEventListener("change", async e => {
@@ -2733,7 +3359,7 @@ $("#view").addEventListener("change", async e => {
   if (t.id === "o-date" && t.value) { S.ui.ordDate = t.value; render(); }
   if (t.id === "h-date" && t.value) { S.ui.hDate = t.value; render(); }
   if (t.id === "h-item") { S.ui.hItem = t.value; render(); }
-  const toggles = {"s-checks": ["packChecks", "Packing checkboxes"], "s-wm": ["watermark", "Logo watermark"]};
+  const toggles = {"s-checks": ["packChecks", "Packing checkboxes"], "s-wm": ["watermark", "Logo watermark"], "s-exp-restock": ["expRestock", "Expeditors can restock"], "s-exp-close": ["expClose", "Expeditors can close the day"]};
   if (toggles[t.id]) {
     const [key, label] = toggles[t.id], want = t.checked;
     if (!(await pinOk())) { t.checked = !want; return; }
@@ -2782,7 +3408,7 @@ function watchDate(){
     if (S.ui.ordDate === S.today) S.ui.ordDate = k;
     if (S.ui.hDate === S.today) S.ui.hDate = k;
     S.today = k;
-    if (!$("#modal-root").classList.contains("on")) render();
+    const mr = $("#modal-root"); if (mr && !mr.classList.contains("on")) render();
   };
   setInterval(tick, 30000);
   document.addEventListener("visibilitychange", tick);
