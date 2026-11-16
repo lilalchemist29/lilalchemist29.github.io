@@ -471,11 +471,12 @@ label:has(> input[type="file"]){position:relative}
 details.changes summary{cursor:pointer;font-weight:650;color:var(--teal-strong);margin:4px 0}
 .chg{margin:8px 0;font-size:14px}.chg small{color:var(--muted)}.chg ul{margin:4px 0 0;padding-left:18px;color:var(--muted)}
 @media (max-width: 560px){ .opt-row{grid-template-columns:1fr 1fr} .opt-row .stepper-row{grid-column:1/2} .opt-row.addon{grid-template-columns:1fr 1fr} }
-.slip.wm::before{content:"";position:absolute;inset:0;background:var(--wm) center 42%/62% auto no-repeat;opacity:.08;pointer-events:none}
+.slip.wm::before{content:"";position:absolute;inset:14px;background-image:var(--wm);background-position:center;background-size:92% auto;background-repeat:no-repeat space;opacity:.07;pointer-events:none}
+.slip-event{text-align:center;color:#8A7767;font-size:12.5px;font-weight:700;letter-spacing:.03em;margin-bottom:2px}
 .slip > *:not(.stamp):not(.slip-corners){position:relative}
 .slip-corners{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;pointer-events:none}
 .slip-corners img{width:54px;height:54px;object-fit:contain}
-.slip.corners .slip-shop,.slip.corners .slip-kind{padding:0 62px}
+.slip.corners .slip-shop,.slip.corners .slip-kind,.slip.corners .slip-event{padding:0 62px}
 .slip-printed{font-size:12.5px;color:#8A7767;text-align:center;margin-top:4px}
 .logo-row{display:flex;align-items:center;gap:12px}
 .logo-prev{width:64px;height:64px;border-radius:12px;border:1px dashed var(--line);background:#fff;display:grid;place-items:center;overflow:hidden;color:var(--muted);font-size:12px;flex:none}
@@ -1099,11 +1100,12 @@ function lockNow(){
 function openLockSheet(){
   const adm = S.role === "admin";
   openModal(mHead("Lock or switch user") + `<div class="m-body">
-    <p class="note">Locking covers the screen until a PIN is entered. To hand over to someone else, lock, then tap <b>Switch role</b>. Any order in progress is kept.</p>
+    <p class="note">Locking covers the screen until a PIN is entered. To hand over to someone else, tap <b>Switch user</b>. Any order in progress is kept.</p>
     <div class="mini"><span>Auto-lock</span><b>${esc(autoLockText())}</b></div>
     ${adm ? `<div class="field"><span>Change auto-lock (admin PIN)</span><div class="seg" role="group" aria-label="Auto-lock">${[[5, "5 min"], [15, "15 min"], [30, "30 min"], [60, "1 hour"], [0, "Only when reopened"]].map(([v, l]) => `<button data-al="${v}" aria-pressed="${autoLockMin() === v}">${l}</button>`).join("")}</div></div>` : `<p class="hint">Only the admin can change the auto-lock time.</p>`}
-    <div class="btn-row"><button class="btn ghost" data-close>Cancel</button><button class="btn ink" id="lk-now">Lock now</button></div></div>`, {onMount(m){
+    <div class="btn-row"><button class="btn ghost" data-close>Cancel</button><button class="btn ghost" id="lk-switch">Switch user</button><button class="btn ink" id="lk-now">Lock now</button></div></div>`, {onMount(m){
       $("#lk-now", m).onclick = () => { closeModal(); lockNow(); };
+      $("#lk-switch", m).onclick = () => { closeModal(); lockNow(); if (lockEl && hasOwner()) showLogin(); };
       m.addEventListener("click", async e => {
         const b = e.target.closest("[data-al]"); if (!b) return;
         const v = Number(b.dataset.al); if (v === autoLockMin()) return;
@@ -2049,8 +2051,9 @@ function slipHTML(o){
   return `<div class="slip ${wm ? "wm" : ""} ${corner ? "corners" : ""}" ${wm ? `style="--wm:url('${esc(imgSrc(sellers[0].logo))}')"` : ""}>
     ${corner ? `<div class="slip-corners">${sellers.slice(0, 2).map(x => x.logo ? `<img src="${esc(imgSrc(x.logo))}" alt="${esc(x.name)} logo">` : "<span></span>").join("")}</div>` : ""}
     ${o.status === "void" ? `<div class="stamp">Voided</div>` : ""}
+    ${cfg().eventName ? `<div class="slip-event">${esc(cfg().eventName)}</div>` : ""}
     <div class="slip-shop">${esc(slipBrand(o))}</div>
-    <div class="slip-kind">Order slip (not an official receipt)</div>
+    <div class="slip-kind">Customer receipt (not an official receipt)</div>
     <hr>
     <div class="slip-meta"><strong>Order ${esc(o.no)}</strong><span>${fmtDateTime(o.createdAt)}</span></div>
     ${o.customer ? `<div class="slip-for">For ${esc(o.customer)}</div>` : ""}
@@ -2068,7 +2071,8 @@ function slipHTML(o){
 }
 function slipText(o){
   const by = slipBy(o), sellers = orderSellers(o), L = [];
-  L.push(slipBrand(o), "Order slip (not an official receipt)", `Order ${o.no}`, fmtDateTime(o.createdAt));
+  if (cfg().eventName) L.push(cfg().eventName);
+  L.push(slipBrand(o), "Customer receipt (not an official receipt)", `Order ${o.no}`, fmtDateTime(o.createdAt));
   if (o.customer) L.push("For " + o.customer);
   if (o.preorder) L.push("Pickup: " + fmtPickup(o.preorder.pickupAt));
   if (o.note) L.push("Note: " + o.note);
@@ -2107,7 +2111,7 @@ async function slipCanvas(o, opts){
   const by = slipBy(o), sellers = orderSellers(o), socials = sellers.filter(x => x.ig), single = sellers.length === 1;
   const logos = await Promise.all(sellers.map(x => loadImg(x.logo)));
   const isM = opts.copyType === "merchant", isC = opts.copyType === "customer";
-  const tag = [isM ? "MERCHANT COPY" : isC ? "CUSTOMER COPY" : "", opts.copy > 1 ? `REPRINT ${opts.copy}` : ""].filter(Boolean).join(", ");
+  const tag = [isM ? "ORDER SLIP" : "", opts.copy > 1 ? `REPRINT ${opts.copy}` : ""].filter(Boolean).join(", ");
   if (tag) {
     y += L(8); const at = y, h = L(34), solid = opts.copy > 1;
     ops.push(c => {
@@ -2117,6 +2121,7 @@ async function slipCanvas(o, opts){
     y = at + h + L(6);
   }
   if (!isM) {
+  if (conf.eventName) { wrap(conf.eventName, f(700, 14), W - 2 * P).forEach(ln => { y += L(20); T(ln, f(700, 14), W / 2, "center", MUTED); }); y += L(4); }
   const corner = !single && logos.some(Boolean), brandFont = f(800, corner && size === "58" ? 24 : 30), lineH = corner && size === "58" ? L(28) : L(34);
   if (corner) {
     const box = size === "58" ? L(52) : L(thermal ? 70 : 64), top = y + L(4);
@@ -2129,7 +2134,7 @@ async function slipCanvas(o, opts){
     if (single && logos[0] && thermal) { const box = L(110), [w, h] = fit(logos[0], box), at = y + L(4), img = logos[0]; ops.push(c => c.drawImage(img, (W - w) / 2, at, w, h)); y = at + h + L(4); }
     wrap(slipBrand(o), brandFont, W - 2 * P).forEach((ln, i) => { y += i ? L(34) : L(30); T(ln, brandFont, W / 2, "center"); });
   }
-  y += L(24); T("Order slip (not an official receipt)", f(thermal ? 600 : 400, 15), W / 2, "center", MUTED);
+  y += L(24); T("Customer receipt (not an official receipt)", f(thermal ? 600 : 400, 15), W / 2, "center", MUTED);
   y += L(20); rule();
   }
   y += L(32); T("Order " + o.no, f(800, 22), P); if (!thermal || size === "80") T(fmtDateTime(o.createdAt), f(400, 15), W - P, "right", MUTED);
@@ -2186,7 +2191,7 @@ async function slipCanvas(o, opts){
   y += L(30);
   if (isM) T("For our records: keep with the order", f(600, 14), W / 2, "center", MUTED);
   else {
-    if (isC && !o.fulfilledAt && o.status !== "void") { T("Show this slip when you claim your order", f(700, 15), W / 2, "center"); y += L(24); }
+    if (isC && !o.fulfilledAt && o.status !== "void") { T("Show this receipt when you claim your order", f(700, 15), W / 2, "center"); y += L(24); }
     wrap(sellers.length > 1 ? "Thank you for supporting small local bakers!" : "Thank you for supporting our small bake shop!", f(thermal ? 600 : 400, 14), W - 2 * P).forEach((ln, i) => { if (i) y += L(20); T(ln, f(thermal ? 600 : 400, 14), W / 2, "center", MUTED); });
   }
   y += thermal ? L(40) : P;
@@ -2195,8 +2200,10 @@ async function slipCanvas(o, opts){
   c.fillStyle = thermal ? "#fff" : "#FFFDF8"; c.fillRect(0, 0, W, y);
   if (!thermal) { c.strokeStyle = "#EADFCF"; c.lineWidth = 2; c.strokeRect(1, 1, W - 2, y - 2); }
   if (single && logos[0] && !thermal && !isM && conf.watermark !== false) {
-    const img = logos[0], [w, h] = fit(img, W * .62);
-    c.save(); c.globalAlpha = .07; c.drawImage(img, (W - w) / 2, Math.max(P, y * .42 - h / 2), w, h); c.restore();
+    /* the logo, as wide as the receipt, repeated evenly from top to bottom */
+    const img = logos[0], [w, h] = fit(img, W - 2 * P), gap = Math.max(L(24), h * .18);
+    const n = Math.max(1, Math.floor((y - 2 * P + gap) / (h + gap))), sp = n > 1 ? (y - 2 * P - n * h) / (n - 1) : 0, y0 = n > 1 ? P : (y - h) / 2;
+    c.save(); c.globalAlpha = .06; for (let i = 0; i < n; i++) c.drawImage(img, (W - w) / 2, y0 + i * (h + sp), w, h); c.restore();
   }
   c.textBaseline = "alphabetic";
   ops.forEach(op => op(c));
@@ -2291,7 +2298,7 @@ function paper(size){
     rule: () => { const at = y; ops.push(c => { c.strokeStyle = INK; c.lineWidth = thermal ? 2 : 1.5; c.setLineDash([8, 6]); c.beginPath(); c.moveTo(P, at); c.lineTo(W - P, at); c.stroke(); c.setLineDash([]); }); },
     draw: fn => { const at = y; ops.push(c => fn(c, at)); },
     get y(){ return y; }, set y(v){ y = v; },
-    done(){ y += thermal ? L(40) : P; const cv = document.createElement("canvas"); cv.width = W * SC; cv.height = Math.ceil(y * SC); const c = cv.getContext("2d"); c.scale(SC, SC); c.fillStyle = "#fff"; c.fillRect(0, 0, W, y); c.textBaseline = "alphabetic"; ops.forEach(op => op(c)); return cv; }
+    done(){ y += thermal ? L(40) : P; const cv = document.createElement("canvas"); cv.width = W * SC; cv.height = Math.ceil(y * SC); const c = cv.getContext("2d"); c.scale(SC, SC); c.fillStyle = "#fff"; c.fillRect(0, 0, W, y); if (api.bg) api.bg(c, W, y); c.textBaseline = "alphabetic"; ops.forEach(op => op(c)); return cv; }
   };
   return api;
 }
@@ -2300,21 +2307,43 @@ function eodData(dayTs){
   const all = orderList().filter(o => o.createdAt >= d0 && o.createdAt < d1), live = all.filter(o => o.status !== "void");
   const pays = paysIn(d0, d1), acct = {};
   pays.forEach(x => { const n = x.method === "cash" ? "Cash" : (x.qrLabel || "GoTyme"); acct[n] = round2((acct[n] || 0) + (Number(x.amount) || 0)); });
-  const items = {}, sellers = {};
+  const items = {}, sellers = {}, bySeller = {};
   live.forEach(o => o.items.forEach(i => { const p0 = S.products[i.pid], nm = p0 ? itemLabel(p0, i.vid ? variantOf(p0, i.vid) : null) : i.name, key = nm;
     items[key] = items[key] || {qty: 0, amt: 0}; items[key].qty += i.qty; items[key].amt = round2(items[key].amt + itemNet(o, i));
-    const sv = lineSeller(i); sellers[sv] = round2((sellers[sv] || 0) + itemNet(o, i)); }));
+    const sv = lineSeller(i); sellers[sv] = round2((sellers[sv] || 0) + itemNet(o, i));
+    const g = bySeller[sv] = bySeller[sv] || {}; g[key] = g[key] || {qty: 0, amt: 0}; g[key].qty += i.qty; g[key].amt = round2(g[key].amt + itemNet(o, i)); }));
   const cl = S.closings[k] || null;
   return {d0, k, orders: live.length, voided: all.length - live.length, gross: round2(live.reduce((a, o) => a + (o.gross != null ? o.gross : o.total), 0)),
     discount: round2(live.reduce((a, o) => a + (o.discount || 0), 0)), net: round2(live.reduce((a, o) => a + orderNet(o), 0)), fees: round2(live.reduce((a, o) => a + (o.fee || 0), 0)),
     received: round2(pays.reduce((a, x) => a + (Number(x.amount) || 0), 0)), acct, deposits: round2(pays.filter(x => x.kind === "deposit").reduce((a, x) => a + x.amount, 0)),
     balancesIn: round2(pays.filter(x => x.kind === "balance").reduce((a, x) => a + x.amount, 0)), owed: round2(live.reduce((a, o) => a + orderBalance(o), 0)),
-    items, sellers, cl, cash: round2(acct.Cash || 0)};
+    items, sellers, bySeller, cl, cash: round2(acct.Cash || 0)};
 }
 async function eodCanvas(dayTs, size){
   try { await document.fonts.ready; } catch (e) {}
-  const d = eodData(dayTs), pg = paper(size), {f, L} = pg, multi = Object.keys(d.sellers).length > 1;
-  pg.gap(30); pg.text(cfg().shopName, f(800, 28), "center");
+  const d = eodData(dayTs), pg = paper(size), {f, L} = pg, house = cfg().shopName;
+  const names = Object.keys(d.sellers).sort((a, b) => a === house ? -1 : b === house ? 1 : a.localeCompare(b)), multi = names.length > 1;
+  const meas = document.createElement("canvas").getContext("2d");
+  const wrap = (t, font, maxW) => { meas.font = font; const out = []; let cur = ""; String(t).split(" ").forEach(w => { const n = cur ? cur + " " + w : w; if (cur && meas.measureText(n).width > maxW) { out.push(cur); cur = w; } else cur = n; }); if (cur) out.push(cur); return out; };
+  /* Every seller's logo: tiled across the whole report on a regular printer, or in a row at the top on thermal paper */
+  const logos = cfg().watermark === false ? [] : (await Promise.all(vendorList().map(v => loadImg(sellerInfo(v.id).logo)))).filter(Boolean);
+  if (logos.length && pg.thermal) {
+    const box = L(logos.length > 2 ? 64 : 84), gap = L(16), tot = logos.length * box + (logos.length - 1) * gap, at = pg.y + L(6);
+    logos.forEach((img, i) => { const r = Math.min(box / img.naturalWidth, box / img.naturalHeight), w = img.naturalWidth * r, h = img.naturalHeight * r, x = (pg.W - tot) / 2 + i * (box + gap); pg.draw(c => c.drawImage(img, x + (box - w) / 2, at + (box - h) / 2, w, h)); });
+    pg.y = at + box;
+  } else if (logos.length) {
+    pg.bg = (c, W, H) => {
+      const cell = Math.round(W / 3), pad = cell * .17;
+      c.save(); c.globalAlpha = .07;
+      for (let row = 0, yy = 0; yy < H; row++, yy += cell) for (let col = 0, xx = row % 2 ? -cell / 2 : 0; xx < W; col++, xx += cell) {
+        const img = logos[(row + col) % logos.length], r = Math.min((cell - 2 * pad) / img.naturalWidth, (cell - 2 * pad) / img.naturalHeight), w = img.naturalWidth * r, h = img.naturalHeight * r;
+        c.drawImage(img, xx + (cell - w) / 2, yy + (cell - h) / 2, w, h);
+      }
+      c.restore();
+    };
+  }
+  if (cfg().eventName) wrap(cfg().eventName, f(700, 15), pg.W - 2 * pg.P).forEach(ln => { pg.gap(24); pg.text(ln, f(700, 15), "center", pg.MUTED); });
+  wrap(names.length ? names.join(" × ") : house, f(800, 28), pg.W - 2 * pg.P).forEach((ln, i) => { pg.gap(i ? 34 : 32); pg.text(ln, f(800, 28), "center"); });
   pg.gap(24); pg.text("End-of-day report", f(700, 17), "center");
   pg.gap(22); pg.text(fmtDate(d.d0), f(500, 15), "center", pg.MUTED);
   pg.gap(16); pg.rule();
@@ -2327,11 +2356,15 @@ async function eodCanvas(dayTs, size){
   row("Total received", peso(d.received), true);
   if (d.deposits) row("of which deposits", peso(d.deposits)); if (d.balancesIn) row("of which balances paid", peso(d.balancesIn));
   if (d.owed) row("Pre-order balances due", peso(d.owed));
-  pg.gap(16); pg.rule(); pg.gap(26); pg.text("Items sold", f(700, 16));
-  Object.entries(d.items).sort((a, b) => b[1].qty - a[1].qty).forEach(([n, x]) => { const lines = []; let cur = ""; const meas = document.createElement("canvas").getContext("2d"); meas.font = f(500, 15);
-    String(x.qty + " × " + n).split(" ").forEach(w => { const t = cur ? cur + " " + w : w; if (cur && meas.measureText(t).width > pg.W - 2 * pg.P - L(90)) { lines.push(cur); cur = w; } else cur = t; }); if (cur) lines.push(cur);
-    lines.forEach((ln, i) => { pg.gap(22); if (i === 0) pg.pair(ln, peso(x.amt), f(500, 15)); else pg.text(ln, f(500, 15)); }); });
-  if (multi) { pg.gap(16); pg.rule(); pg.gap(26); pg.text("By seller", f(700, 16)); Object.entries(d.sellers).forEach(([n, a]) => row(n, peso(a))); }
+  const itemRows = list => Object.entries(list).sort((a, b) => b[1].qty - a[1].qty).forEach(([n, x]) => {
+    wrap(x.qty + " × " + n, f(500, 15), pg.W - 2 * pg.P - L(90)).forEach((ln, i) => { pg.gap(22); if (i === 0) pg.pair(ln, peso(x.amt), f(500, 15)); else pg.text(ln, f(500, 15)); }); });
+  pg.gap(16); pg.rule(); pg.gap(26); pg.text(multi ? "Items sold, by seller" : "Items sold", f(700, 16));
+  if (multi) names.forEach((sv, i) => {
+    pg.gap(i ? 34 : 28); wrap(sv, f(800, 16), pg.W - 2 * pg.P).forEach((ln, j) => { if (j) pg.gap(22); pg.text(ln, f(800, 16)); });
+    itemRows(d.bySeller[sv] || {});
+    pg.gap(26); pg.pair(sv.length > 18 ? "Seller total" : sv + " total", peso(d.sellers[sv]), f(800, 16));
+  });
+  else itemRows(d.items);
   pg.gap(16); pg.rule(); pg.gap(26); pg.text("Cash drawer", f(700, 16));
   if (d.cl) { row("Starting cash", peso(d.cl.float)); row("Cash received", peso(d.cl.cashSales)); row("Expected", peso(d.cl.expected)); row("Counted", peso(d.cl.counted), true);
     row(Math.abs(d.cl.diff) < .01 ? "Balanced" : d.cl.diff > 0 ? "Over by" : "Short by", peso(Math.abs(d.cl.diff)), true); }
@@ -2362,7 +2395,7 @@ async function testCanvas(size){
 }
 
 /* Print preview: shows the exact print copy and every way to get it onto paper.
-   With "Merchant + customer", it's two steps so the merchant copy can be torn off before the customer copy prints. */
+   With "Order slip + receipt", it's two steps so the order slip can be torn off before the customer receipt prints. */
 async function printSlip(o, stepIn){
   const cur = S.orders[o.id] || o, conf = cfg(), size = slipSize(), mode = printCopies();
   const steps = mode === "both" ? ["merchant", "customer"] : [mode];
@@ -2373,23 +2406,23 @@ async function printSlip(o, stepIn){
   catch (e) { toast("Couldn’t prepare the slip for printing.", "bad"); return; }
   const src = cv.toDataURL("image/png"), blob = await new Promise(res => cv.toBlob(b => res(b), "image/png"));
   const sizeName = size === "regular" ? "Regular printer" : size + " mm thermal";
-  const who = type === "merchant" ? "merchant copy" : "customer copy", Who = type === "merchant" ? "Merchant copy" : "Customer copy";
+  const who = type === "merchant" ? "order slip" : "customer receipt", Who = type === "merchant" ? "Order slip" : "Customer receipt";
   const next = two && step === 0;
   openModal(mHead(`${copy > 1 ? "Reprint" : "Print"} ${who}${two ? ` (${step + 1} of 2)` : ""}`) + `<div class="m-body">
     <div style="max-height:48vh;overflow:auto;background:var(--surface-2);border-radius:12px;padding:10px"><img class="slip-img" src="${src}" alt="${Who} of order ${esc(cur.no)}" style="max-width:${size === "regular" ? "420px" : size === "58" ? "300px" : "380px"}"></div>
-    <p class="hint">${sizeName}. ${type === "merchant" ? `Merchant copy${conf.packChecks !== false ? " with packing checkboxes" : ""}, to keep with the order.` : "Customer copy, to hand over as their claim slip and keepsake."}${copy > 1 ? ` Marked as reprint ${copy}.` : ""}${next ? " Tear it off, then print the customer copy." : ""}</p>
+    <p class="hint">${sizeName}. ${type === "merchant" ? `Order slip${conf.packChecks !== false ? " with packing checkboxes" : ""}, to keep with the order.` : "Customer receipt, to hand over as their claim slip and keepsake."}${copy > 1 ? ` Marked as reprint ${copy}.` : ""}${next ? " Tear it off, then print the customer receipt." : ""}</p>
     <div class="btn-row">
       <button class="btn ${inFrame ? "banana" : "ghost"}" data-pp-save>Save for printing</button>
       ${canShareFiles ? `<button class="btn ghost" data-pp-share>Send to printer app</button>` : ""}
       <button class="btn ${inFrame ? "ghost" : "banana"}" data-pp-print>Print ${who}</button>
     </div>
     <p class="hint" id="ppmsg" aria-live="polite">${isIOS && canShareFiles && !inFrame ? "On iPad, Print opens the share sheet: tap Print (AirPrint) or your thermal printer’s app." : inFrame ? "Printing straight from inside the Claude app usually isn’t allowed. Tap “Save for printing”, then open the image in your printer’s app (or in Gallery or Photos, then Print)." : ""}</p>
-    ${next ? `<button class="btn ink big" data-pp-next>Next: print customer copy</button>` : ""}
-    <div class="btn-row">${two && step === 1 ? `<button class="btn ghost" data-pp-prev>Back to merchant copy</button>` : ""}<button class="btn ghost" data-pp-back>${two && step === 1 ? "Done" : "Back to order"}</button></div></div>`, {onMount(m){
+    ${next ? `<button class="btn ink big" data-pp-next>Next: print customer receipt</button>` : ""}
+    <div class="btn-row">${two && step === 1 ? `<button class="btn ghost" data-pp-prev>Back to order slip</button>` : ""}<button class="btn ghost" data-pp-back>${two && step === 1 ? "Done" : "Back to order"}</button></div></div>`, {onMount(m){
       const msg = $("#ppmsg", m), nb = m.querySelector("[data-pp-next]");
       let done = false;
       const sent = text => {
-        msg.textContent = text + (next ? " Tear off the merchant copy, then tap “Next: print customer copy”." : "");
+        msg.textContent = text + (next ? " Tear off the order slip, then tap “Next: print customer receipt”." : "");
         if (!done) { done = true; if (step === 0) markPrinted(cur); }
         if (nb) { nb.classList.remove("ink"); nb.classList.add("banana"); nb.focus(); }
       };
@@ -2398,16 +2431,16 @@ async function printSlip(o, stepIn){
         if (e.target.closest("[data-pp-next]")) { if (!done && step === 0) markPrinted(cur); printSlip(Object.assign({}, cur, {__copy: copy}), 1); return; }
         if (e.target.closest("[data-pp-prev]")) { printSlip(Object.assign({}, cur, {__copy: copy}), 0); return; }
         if (e.target.closest("[data-pp-save]")) {
-          const ok = blob && await saveFile(`order-${cur.no}-${type}${copy > 1 ? "-reprint" + copy : ""}.png`, blob, "image/png");
+          const ok = blob && await saveFile(`order-${cur.no}-${type === "merchant" ? "order-slip" : "receipt"}${copy > 1 ? "-reprint" + copy : ""}.png`, blob, "image/png");
           if (ok) sent("Saved. Open the image in your printer’s app (or Gallery or Photos, then Print).");
           else msg.textContent = "Couldn’t save the image on this device. Press and hold the picture above to save it instead.";
         }
         if (e.target.closest("[data-pp-share]")) {
-          try { await navigator.share({files: [new File([blob], `order-${cur.no}-${type}.png`, {type: "image/png"})], title: `Order ${cur.no}, ${who}`}); sent("Sent."); }
+          try { await navigator.share({files: [new File([blob], `order-${cur.no}-${type === "merchant" ? "order-slip" : "receipt"}.png`, {type: "image/png"})], title: `Order ${cur.no}, ${who}`}); sent("Sent."); }
           catch (err) { if (!(err && err.name === "AbortError")) msg.textContent = "Sharing isn’t available here. Use “Save for printing”."; }
         }
         if (e.target.closest("[data-pp-print]") && isIOS && canShareFiles) {
-          try { await navigator.share({files: [new File([blob], `order-${cur.no}-${type}.png`, {type: "image/png"})], title: `Order ${cur.no}, ${who}`}); sent("Sent."); }
+          try { await navigator.share({files: [new File([blob], `order-${cur.no}-${type === "merchant" ? "order-slip" : "receipt"}.png`, {type: "image/png"})], title: `Order ${cur.no}, ${who}`}); sent("Sent."); }
           catch (err) { if (!(err && err.name === "AbortError")) msg.textContent = "Couldn’t open the share sheet. Use “Save for printing”."; }
           return;
         }
@@ -2459,7 +2492,7 @@ function showSlip(o, fresh){
       <div class="btn-row"><button class="btn banana" data-bal="cash">Collect balance: cash</button><button class="btn teal" data-bal="qr">Collect balance: digital</button></div>` : ""}
     ${live && !o.fulfilledAt ? `<div class="btn-row"><button class="btn ghost" data-print>${o.printCount ? "Reprint slip" : "Print slip"}</button><button class="btn banana" data-fulfill ${orderBalance(o) ? "disabled" : ""}>Mark as fulfilled</button></div>
       ${orderBalance(o) ? `<p class="hint">Collect the balance before handing the order over.</p>` : ""}
-      <p class="hint">Print the slip (a merchant copy with packing checkboxes for the packers, and a customer copy to hand over), then tap “Mark as fulfilled” once the order is boxed and handed over. A copy of the slip is saved with the order.</p>` : ""}
+      <p class="hint">Print the slip (an order slip with packing checkboxes for the packers, and the customer receipt to hand over), then tap “Mark as fulfilled” once the order is boxed and handed over. A copy of the slip is saved with the order.</p>` : ""}
     ${live && o.fulfilledAt ? `<div class="btn-row">${o.slip ? `<button class="btn ghost" data-viewslip>View saved slip</button>` : ""}<button class="btn ghost" data-print>Reprint slip</button><button class="btn ghost" data-unfulfill>Undo fulfilled</button></div>` : ""}
     <div class="btn-row">
       <button class="btn ghost" data-copy>Copy as text</button>
@@ -2924,7 +2957,8 @@ function viewSettings(){
   const where = S.mode === "cloud" ? "Saved to your Claude account and synced to any device where you open this app signed in." : OFFLINE ? "Saved on this tablet, inside the app. Uninstalling the app or clearing Chrome’s data for it erases everything, so back up weekly and keep the file somewhere safe (Google Drive, a USB drive or your computer)." : "Saved in this browser only. Clearing browser data erases it, so export backups often.";
   return `<section class="page"><div class="page-head"><h1>Settings</h1></div><div class="settings">
     <div class="card"><h2>Shop details</h2>
-      <label class="field"><span>Shop name (shown on order slips)</span><input id="s-name" value="${esc(c.shopName)}" autocomplete="off"></label>
+      <label class="field"><span>Shop name (shown on receipts for your own items)</span><input id="s-name" value="${esc(c.shopName)}" autocomplete="off"></label>
+      <label class="field"><span>Event or stall name (optional, shown at the top of receipts and the end-of-day report)</span><input id="s-event" value="${esc(c.eventName || "")}" placeholder="e.g. Christmas Pop-up Bonanza" autocomplete="off"></label>
       <label class="field"><span>Instagram (shown as a QR code on slips)</span><input id="s-ig" value="${esc(c.instagram ? "@" + igClean(c.instagram) : "")}" placeholder="@rngwillbake" autocomplete="off" autocapitalize="off"></label>
       <div class="field"><span>Logo (watermark on your slips, corner logo on collab slips)</span>
         <div class="logo-row"><span class="logo-prev">${c.logo ? `<img src="${esc(imgSrc(c.logo))}" alt="Shop logo">` : "None"}</span>
@@ -2952,10 +2986,10 @@ function viewSettings(){
     <div class="card"><h2>Printing</h2>
       <div class="field"><span>Slip size</span><div class="seg" role="group" aria-label="Slip size">${[["regular", "Regular printer"], ["58", "58 mm thermal"], ["80", "80 mm thermal"]].map(([v, l]) => `<button data-act="slipsize" data-v="${v}" aria-pressed="${slipSize() === v}">${l}</button>`).join("")}</div></div>
       <p class="note">Thermal sizes print in black only at the paper’s exact width. Most Bluetooth thermal printers print from their own app: tap Print slip, then “Save for printing” (or “Send to printer app” where available) and open the image in that app.</p>
-      <div class="field"><span>Copies each time you print</span><div class="seg" role="group" aria-label="Copies">${[["both", "Merchant + customer"], ["merchant", "Merchant only"], ["customer", "Customer only"]].map(([v, l]) => `<button data-act="printcopies" data-v="${v}" aria-pressed="${printCopies() === v}">${l}</button>`).join("")}</div></div>
-      <p class="note">With both, printing is two steps: the merchant copy prints first so you can tear it off cleanly, then tap “Next: print customer copy”. The merchant copy stays with the order for packing and your records (no QR codes, to save paper). The customer copy is their claim slip and keepsake, with your Instagram QR codes and no checkboxes.</p>
-      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-checks" ${c.packChecks !== false ? "checked" : ""}><span>Packing checkboxes beside each item on the merchant copy</span></label>
-      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-wm" ${c.watermark !== false ? "checked" : ""}><span>Logo watermark on single-seller slips (screen and regular printer; thermal prints the logo at the top instead)</span></label>
+      <div class="field"><span>Copies each time you print</span><div class="seg" role="group" aria-label="Copies">${[["both", "Order slip + receipt"], ["merchant", "Order slip only"], ["customer", "Receipt only"]].map(([v, l]) => `<button data-act="printcopies" data-v="${v}" aria-pressed="${printCopies() === v}">${l}</button>`).join("")}</div></div>
+      <p class="note">With both, printing is two steps: the order slip prints first so you can tear it off cleanly, then tap “Next: print customer receipt”. The order slip stays with the order for packing and your records (no QR codes, to save paper). The customer receipt is the same receipt shown after payment: their claim slip and keepsake, with the Instagram QR codes and no checkboxes.</p>
+      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-checks" ${c.packChecks !== false ? "checked" : ""}><span>Packing checkboxes beside each item on the order slip</span></label>
+      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-wm" ${c.watermark !== false ? "checked" : ""}><span>Logo watermark down the whole receipt for single-seller orders, and every seller’s logo across the end-of-day report (screen and regular printer; thermal prints the logos at the top instead)</span></label>
       <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-slipcopy" ${c.slipCopy !== false ? "checked" : ""}><span>When an order is fulfilled, also save a copy of its slip to this device</span></label>
       <p class="note">Printing a slip a second time marks both copies “Reprint 2” at the top so packers don’t box it twice.</p>
       <button class="btn ghost" data-act="test-page">Print a test page</button></div>
@@ -3350,8 +3384,9 @@ async function removeSeller(id){
 }
 
 /* ---------- app revisions ---------- */
-const APP_VERSION = "1.9 (November 2026)";
+const APP_VERSION = "1.10 (November 2026)";
 const CHANGES = [
+  ["1.10", "Nov 2026", ["The receipt shown after payment is the customer receipt; the merchant copy is now the “Order slip”", "Single-seller receipts: the logo watermark runs down the whole receipt", "Optional event or stall name at the top of receipts and the end-of-day report", "Lock or switch user: new Switch user button", "End-of-day report: every seller’s logo across the page, and items sold grouped by seller with totals"]],
   ["1.9", "Nov 2026", ["New Pudding Bar: customers pick a base and one mix-in, one price per cup", "Bases and mix-ins each keep their own servings count; add, edit and restock them in Stock → Pudding Bar"]],
   ["1.8.2", "Nov 2026", ["Gliding across tabs and options is more forgiving near the edges", "Google Drive: “Check connection” button, and Settings shows why a backup didn’t work"]],
   ["1.8.1", "Nov 2026", ["Press and slide across tabs and options to pick one"]],
@@ -3541,14 +3576,15 @@ $("#view").addEventListener("click", e => {
     case "bar-restock": if (S.products[id]) openRestock(S.products[id], el.dataset.o); break;
     case "save-shop": {
       const shopName = $("#s-name").value.trim() || DEFAULTS.shopName, was = cfg().shopName;
-      const ig = igClean($("#s-ig").value), wasIg = igClean(cfg().instagram);
-      if (shopName === was && ig === wasIg) { toast("Nothing changed."); break; }
+      const ig = igClean($("#s-ig").value), wasIg = igClean(cfg().instagram), ev = $("#s-event").value.trim(), wasEv = cfg().eventName || "";
+      if (shopName === was && ig === wasIg && ev === wasEv) { toast("Nothing changed."); break; }
       pinOk().then(ok => {
         if (!ok) return;
         const notes = [];
         if (shopName !== was) notes.push(`Shop name: ${was} \u2192 ${shopName}`);
         if (ig !== wasIg) notes.push(`Instagram: ${wasIg ? "@" + wasIg : "(none)"} \u2192 ${ig ? "@" + ig : "(none)"}`);
-        put("settings", null, Object.assign({}, S.settings, {shopName, instagram: ig})).then(() => { toast("Shop details saved.", "ok"); logAdd(notes.map(note => ({type: "settings", note}))); }).catch(() => {});
+        if (ev !== wasEv) notes.push(`Event name: ${wasEv || "(none)"} \u2192 ${ev || "(none)"}`);
+        put("settings", null, Object.assign({}, S.settings, {shopName, instagram: ig, eventName: ev})).then(() => { toast("Shop details saved.", "ok"); logAdd(notes.map(note => ({type: "settings", note}))); }).catch(() => {});
       });
       break;
     }
@@ -3565,7 +3601,7 @@ $("#view").addEventListener("click", e => {
     case "gd-off": pinOk().then(ok => { if (!ok) return; try { if (gToken && gisReady()) google.accounts.oauth2.revoke(gToken, () => {}); } catch (e) {} gToken = null; saveGd({connected: false}).then(() => { toast("Google Drive disconnected."); logAdd([{type: "settings", note: "Google Drive backup disconnected"}]); }).catch(() => {}); }); break;
     case "tapmode": { const v = el.dataset.v; if (v === (tapToggles() ? "toggle" : "add")) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {tapMode: v})).then(() => logAdd([{type: "settings", note: `Second tap on an item: ${v === "toggle" ? "removes it" : "adds one more"}`}])).catch(() => {}); }); break; }
     case "refmode": { const v = el.dataset.v; if (v === refMode()) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {refMode: v})).then(() => logAdd([{type: "settings", note: `Reference number at checkout: ${v === "auto" ? "read from photo" : "typed"}`}])).catch(() => {}); }); break; }
-    case "printcopies": { const v = el.dataset.v; if (v === printCopies()) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {printCopies: v})).then(() => logAdd([{type: "settings", note: `Print copies: ${v === "both" ? "merchant + customer" : v + " only"}`}])).catch(() => {}); }); break; }
+    case "printcopies": { const v = el.dataset.v; if (v === printCopies()) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {printCopies: v})).then(() => logAdd([{type: "settings", note: `Print copies: ${v === "both" ? "order slip + receipt" : v === "merchant" ? "order slip only" : "receipt only"}`}])).catch(() => {}); }); break; }
     case "slipsize": { const v = el.dataset.v; if (v === slipSize()) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {slipSize: v})).then(() => logAdd([{type: "settings", note: `Slip size: ${v === "regular" ? "regular printer" : v + " mm thermal"}`}])).catch(() => {}); }); break; }
     case "logo-off": pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {logo: null})).then(() => { toast("Logo removed."); logAdd([{type: "settings", note: "Shop logo removed"}]); }).catch(() => {}); }); break;
     case "staff-set": openStaffPin(); break;
