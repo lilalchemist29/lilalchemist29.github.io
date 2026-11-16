@@ -994,6 +994,8 @@ function splitWm(sellers){
   }).catch(() => { delete splitCache[k]; });
   return {k, url: null};
 }
+/* Heading above the daily number: "YOU ARE TODAY’S CUSTOMER" on the customer’s copy, "TODAY’S ORDER" on the order slip (the date and time are printed just below) */
+const callHead = (o, slip) => slip ? "TODAY’S ORDER" : "YOU ARE TODAY’S CUSTOMER";
 /* Short call number, starting at 1 each day */
 function nextCallNo(ts){ const k = dayKey(ts); let max = 0; for (const o of Object.values(S.orders)) if (o.day === k && o.call) max = Math.max(max, Number(o.call) || 0); return max + 1; }
 function qrMake(text){ try { const q = qrcode(0, "M"); q.addData(text); q.make(); return q; } catch (e) { return null; } }
@@ -2202,7 +2204,7 @@ function slipHTML(o){
     ${cfg().eventName ? `<div class="slip-event">${esc(cfg().eventName)}</div>` : ""}
     <div class="slip-shop">${esc(slipBrand(o))}</div>
     <div class="slip-kind"><b class="slip-doc">${esc(custDoc().toUpperCase())}</b>${CUST_NOTE}</div>
-    ${o.call ? `<div class="slip-call"><span>CALL NUMBER</span><b class="num">#${o.call}</b></div>` : ""}
+    ${o.call ? `<div class="slip-call"><span>${esc(callHead(o))}</span><b class="num">#${o.call}</b></div>` : ""}
     <hr>
     <div class="slip-meta"><strong>Order ${esc(o.no)}</strong><span>${fmtDateTime(o.createdAt)}</span></div>
     ${o.customer ? `<div class="slip-for">For ${esc(o.customer)}</div>` : ""}
@@ -2222,7 +2224,7 @@ function slipText(o){
   const by = slipBy(o), sellers = orderSellers(o), L = [];
   if (cfg().eventName) L.push(cfg().eventName);
   L.push(slipBrand(o), custDoc().toUpperCase(), CUST_NOTE);
-  if (o.call) L.push("Call number: #" + o.call);
+  if (o.call) L.push(callHead(o) + " #" + o.call);
   L.push(`Order ${o.no}`, fmtDateTime(o.createdAt));
   if (o.customer) L.push("For " + o.customer);
   if (o.preorder) L.push("Pickup: " + fmtPickup(o.preorder.pickupAt));
@@ -2266,7 +2268,7 @@ async function slipCanvas(o, opts){
     if (!o.call) return;
     const bh = L(98), bw = Math.min(W - 2 * P, L(236)), top = y + L(16), x0 = (W - bw) / 2;
     ops.push(c => { c.strokeStyle = INK; c.lineWidth = thermal ? 4 : 2.5; c.strokeRect(x0, top, bw, bh); c.textAlign = "center";
-      c.font = f(700, 13); c.fillStyle = MUTED; c.fillText("CALL NUMBER", W / 2, top + L(23));
+      c.font = f(700, 13); c.fillStyle = MUTED; c.fillText(callHead(o, isM), W / 2, top + L(23));
       c.font = f(800, 60); c.fillStyle = INK; c.fillText("#" + o.call, W / 2, top + L(82)); });
     y = top + bh;
   };
@@ -3541,8 +3543,10 @@ async function removeSeller(id){
 }
 
 /* ---------- app revisions ---------- */
-const APP_VERSION = "1.12 (November 2026)";
+const APP_VERSION = "1.14 (November 2026)";
 const CHANGES = [
+  ["1.14", "Nov 2026", ["Big number heading: “You are today’s customer” on the customer’s copy, “Today’s order” on the order slip"]],
+  ["1.13", "Nov 2026", ["The big daily number is now headed with the order’s date (e.g. “NOV 16 ORDER”)"]],
   ["1.12", "Nov 2026", ["The customer’s copy is now titled “Order confirmation” by default (“Customer invoice” is still in Settings)", "Collab orders: one centred watermark made of half of each seller’s logo, instead of logos in the top corners"]],
   ["1.11", "Nov 2026", ["Big daily call number (#1, #2…) on the customer’s copy, the order slip and in Orders", "Split payment: part cash, part digital", "Customer’s copy is now titled “Customer invoice” (or “Order confirmation” in Settings) and prints in black, white and greys", "Thermal printing: logos turn into crisp black and white", "Android tablet: layout fits short landscape screens, back gesture closes sheets, screen stays on"]],
   ["1.10", "Nov 2026", ["The receipt shown after payment is the customer receipt; the merchant copy is now the “Order slip”", "Single-seller receipts: the logo watermark runs down the whole receipt", "Optional event or stall name at the top of receipts and the end-of-day report", "Lock or switch user: new Switch user button", "End-of-day report: every seller’s logo across the page, and items sold grouped by seller with totals"]],
