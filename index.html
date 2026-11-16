@@ -571,6 +571,64 @@ body::before{background:var(--glass);-webkit-backdrop-filter:saturate(1.6) blur(
   .ticket .fields{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){.ticket{transition:none}}
+/* Customer copy and order slip: black, white and greys */
+.slip{background:#fff;color:#111;border-color:#ddd}
+.slip-kind,.slip td small,.slip-proof,.slip-foot,.slip-event,.slip-printed,.slip-qrbox small,.slip-seller{color:#666}
+.slip hr{border-top-color:#aaa}
+.slip-pay{color:#333}
+.slip-bal,.slip-status .todo,.slip-status .done{color:#111}
+.stamp{border-color:#111;color:#111}
+.slip-corners img,.slip.wm::before{filter:grayscale(1)}
+.slip-doc{display:block;color:#111;font-size:14px;font-weight:800;letter-spacing:.08em}
+.slip-call{display:flex;flex-direction:column;align-items:center;width:fit-content;min-width:150px;margin:12px auto 4px;padding:6px 18px 8px;border:2.5px solid #111;border-radius:12px}
+.slip-call span{font-size:11.5px;font-weight:700;letter-spacing:.1em;color:#666}
+.slip-call b{font-size:52px;font-weight:800;line-height:1;letter-spacing:-.02em}
+/* Split payment button under Cash / Digital */
+.pay .split-pay{grid-column:1/-1;background:transparent;border:1px dashed var(--fudge-line);color:var(--fudge-ink);border-radius:12px;min-height:40px;font-weight:700;font-size:14px}
+.pay .split-pay:disabled{opacity:.45}
+.orow .o-no small{display:block;font-size:11.5px;font-weight:500;color:var(--muted)}
+/* Android tablet in landscape (e.g. Realme Pad Mini): compact header, order panel fits the screen, keypad beside the amount */
+@media (min-width: 861px) and (max-width: 1100px){
+  .top{gap:10px;padding:8px 12px}
+  .brand h1{max-width:8.5em}
+  .tab{padding:7px 11px;font-size:14px}
+  .sync span,.who span{display:none}
+}
+@media (min-width: 761px) and (max-height: 700px){
+  .sell{padding:12px;gap:12px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:10px}
+  .tile{min-height:112px;padding:11px 12px 10px;border-radius:16px}
+  .tile .dot{width:24px;height:24px;margin-bottom:2px}
+  .tile .t-name{font-size:15px}
+  .tile .t-price{font-size:18px}
+  .cats{margin-bottom:10px}
+  .cat{padding:6px 12px;font-size:14px}
+  .ticket{top:calc(env(safe-area-inset-top,0px) + var(--toph,60px) + 10px);display:flex;flex-direction:column;max-height:calc(100vh - var(--toph,60px) - var(--banh,0px) - 22px);max-height:calc(100dvh - var(--toph,60px) - var(--banh,0px) - 22px - env(safe-area-inset-top,0px));padding:16px 14px 14px}
+  .ticket > *{flex:none}
+  .ticket .lines{flex:1 1 auto;max-height:none;min-height:56px}
+  .ticket-head{margin-bottom:8px}
+  .ticket-head h2{font-size:18px}
+  .ticket .fields{margin-bottom:8px}
+  .ticket .fields{gap:6px}
+  .ticket .field{gap:3px}
+  .ticket .field span{font-size:12px}
+  .ticket .field input{padding:6px 10px;font-size:15px}
+  .line{padding:7px 0}
+  .stepper button{width:32px;height:32px}
+  .total-row{margin:8px 0}
+  .total-row strong{font-size:34px}
+  .pay{gap:8px}
+  .pay .btn.big{min-height:50px;font-size:17px}
+  .pay .split-pay{min-height:34px}
+  .t-extras{margin-top:8px}
+}
+@media (min-width: 761px) and (max-height: 640px){
+  #modal-root .modal:has(.m-pay){width:min(820px,calc(100% - 24px))}
+  .m-head{margin-bottom:10px}
+  .m-pay{position:relative;padding-right:318px;min-height:250px;gap:12px}
+  .m-pay > .pad{position:absolute;top:0;right:0;width:300px;grid-auto-rows:56px;gap:8px}
+  .m-pay .due strong{font-size:30px}
+}
 </style>
 </head>
 <body>
@@ -793,6 +851,22 @@ async function storeLogo(file){
   return {kind: "data", src: await blobToDataURL(blob)};
 }
 async function loadImg(ref){ if (!ref) return null; try { const i = new Image(); i.src = imgSrc(ref); await i.decode(); return i; } catch (e) { return null; } }
+/* Logos on printed copies: greyscale for regular printers, crisp black and white for thermal (the cut-off is picked from the logo itself) */
+function monoImg(img, hard){
+  if (!img) return img;
+  try {
+    const w = img.naturalWidth, h = img.naturalHeight, s = Math.min(1, 640 / Math.max(w, h)), cw = Math.max(1, Math.round(w * s)), ch = Math.max(1, Math.round(h * s));
+    const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch;
+    const c = cv.getContext("2d"); c.drawImage(img, 0, 0, cw, ch);
+    const d = c.getImageData(0, 0, cw, ch), p = d.data, n = p.length / 4, lum = new Uint8ClampedArray(n);
+    for (let i = 0; i < n; i++) { const a = p[i * 4 + 3] / 255, g = .299 * p[i * 4] + .587 * p[i * 4 + 1] + .114 * p[i * 4 + 2]; lum[i] = hard ? g * a + 255 * (1 - a) : g; }
+    let cut = 128;
+    if (hard) { const hist = new Array(256).fill(0); lum.forEach(v => hist[v]++); let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
+      let sB = 0, wB = 0, best = -1; for (let t = 0; t < 256; t++) { wB += hist[t]; if (!wB) continue; const wF = n - wB; if (!wF) break; sB += t * hist[t]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) * (mB - mF); if (v > best) { best = v; cut = t + .5; } } }
+    for (let i = 0; i < n; i++) { if (hard) { const dark = lum[i] < cut; p[i * 4] = p[i * 4 + 1] = p[i * 4 + 2] = 0; p[i * 4 + 3] = dark ? 255 : 0; } else p[i * 4] = p[i * 4 + 1] = p[i * 4 + 2] = lum[i]; }
+    c.putImageData(d, 0, 0); cv.naturalWidth = cw; cv.naturalHeight = ch; return cv;
+  } catch (e) { return img; }
+}
 const slipSize = () => ["58", "80"].includes(cfg().slipSize) ? cfg().slipSize : "regular";
 const imgSrc = ref => !ref ? "" : ref.kind === "asset" ? "/_blob/" + ref.id : (ref.src || "");
 
@@ -895,12 +969,39 @@ function orderSellers(o){
 const lineSeller = it => it.vendorName || sellerInfo(lineVendor(it)).name || "Removed seller";
 const slipBrand = o => hasVendors() || o.items.some(it => lineVendor(it) !== HOUSE) ? orderSellers(o).map(x => x.name).join(" \u00d7 ") : cfg().shopName;
 const slipBy = o => hasVendors() || o.items.some(it => lineVendor(it) !== HOUSE);
+/* What the customer's copy is called (Settings → Printing) */
+const custDoc = () => cfg().custTitle === "invoice" ? "Customer invoice" : "Order confirmation";
+const custShort = () => cfg().custTitle === "invoice" ? "invoice" : "confirmation";
+const CUST_NOTE = "Not a BIR-registered invoice or official receipt";
+/* Collab copies (two sellers): left half of the first seller's logo beside the right half of the second's, as one centred mark */
+function splitLogo(a, b, size){
+  const S = size || 600, g = Math.round(S * .012), cv = document.createElement("canvas"); cv.width = cv.height = S;
+  const c = cv.getContext("2d");
+  const put = (img, x0, x1) => { const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, r = Math.min(S / w, S / h); c.save(); c.beginPath(); c.rect(x0, 0, x1 - x0, S); c.clip(); c.drawImage(img, (S - w * r) / 2, (S - h * r) / 2, w * r, h * r); c.restore(); };
+  put(a, 0, S / 2 - g); put(b, S / 2 + g, S);
+  cv.naturalWidth = cv.naturalHeight = S; return cv;
+}
+const splitCache = {};
+const logoKey = r => { const s = String(r && (r.id || r.src) || ""); let h = 5381; for (let i = 0; i < s.length; i += Math.max(1, s.length >> 12)) h = (h * 33 + s.charCodeAt(i)) >>> 0; return h.toString(36) + s.length.toString(36); };
+/* The on-screen copy gets the half-and-half mark as soon as it's drawn (once per pair of logos) */
+function splitWm(sellers){
+  const k = sellers.map(x => x.id + "-" + logoKey(x.logo)).join("_");
+  if (typeof splitCache[k] === "string") return {k, url: splitCache[k]};
+  if (!splitCache[k]) splitCache[k] = Promise.all(sellers.map(x => loadImg(x.logo))).then(([a, b]) => {
+    if (!a || !b) { delete splitCache[k]; return; }
+    const url = splitLogo(a, b).toDataURL("image/png"); splitCache[k] = url;
+    document.querySelectorAll(`.slip[data-wm="${k}"]`).forEach(el => el.style.setProperty("--wm", `url('${url}')`));
+  }).catch(() => { delete splitCache[k]; });
+  return {k, url: null};
+}
+/* Short call number, starting at 1 each day */
+function nextCallNo(ts){ const k = dayKey(ts); let max = 0; for (const o of Object.values(S.orders)) if (o.day === k && o.call) max = Math.max(max, Number(o.call) || 0); return max + 1; }
 function qrMake(text){ try { const q = qrcode(0, "M"); q.addData(text); q.make(); return q; } catch (e) { return null; } }
 function qrSvgTag(text){
   const q = qrMake(text); if (!q) return "";
   const n = q.getModuleCount(); let d = "";
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c} ${r}h1v1h-1z`;
-  return `<svg class="slip-qr" viewBox="-2 -2 ${n + 4} ${n + 4}" role="img" aria-label="QR code for ${esc(text)}" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#2E1B12"/></svg>`;
+  return `<svg class="slip-qr" viewBox="-2 -2 ${n + 4} ${n + 4}" role="img" aria-label="QR code for ${esc(text)}" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#111"/></svg>`;
 }
 const qrName = o => o.qrLabel || "GoTyme";
 const payNames = o => orderPays(o).map(x => x.method === "cash" ? "Cash" : "Digital (" + (x.qrLabel || "GoTyme") + ")").join(" + ");
@@ -969,7 +1070,7 @@ function openModal(html, opts){
   opts = opts || {};
   const root = $("#modal-root");
   root.innerHTML = `<div class="scrim" data-close></div><div class="modal ${opts.wide ? "wide" : ""}" role="dialog" aria-modal="true">${html}</div>`;
-  root.classList.add("on");
+  root.classList.add("on"); backGuard();
   const m = root.querySelector(".modal");
   if (opts.onMount) opts.onMount(m);
   const f = m.querySelector("[autofocus]"); if (f) setTimeout(() => f.focus(), 30);
@@ -977,13 +1078,21 @@ function openModal(html, opts){
 }
 function closeModal(){ const r = $("#modal-root"); if (!r) return; r.classList.remove("on"); r.innerHTML = ""; }
 document.addEventListener("click", e => { if (e.target.closest("#modal-root [data-close]")) closeModal(); });
-document.addEventListener("keydown", e => {
-  if (e.key !== "Escape") return;
-  const qv = document.querySelector(".qrv");
-  if (qv) { qv.querySelector(".qrv-x").click(); return; }
-  const pl = document.querySelector(".pin-layer");
-  if (pl) { pl.querySelector("[data-pincancel]").click(); return; }
-  if ($("#modal-root") && $("#modal-root").classList.contains("on")) closeModal();
+/* Close whatever is on top: QR viewer, PIN prompt, then the sheet. Used by Escape and the Android back gesture. */
+function closeTop(){
+  const qv = document.querySelector(".qrv"); if (qv) { qv.querySelector(".qrv-x").click(); return true; }
+  const pl = document.querySelector(".pin-layer"); if (pl) { pl.querySelector("[data-pincancel]").click(); return true; }
+  if ($("#modal-root") && $("#modal-root").classList.contains("on")) { closeModal(); return true; }
+  return false;
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeTop(); });
+/* Installed app: the back gesture closes the open sheet (or the order panel) instead of leaving the app */
+const anyOpen = () => !!(document.querySelector(".qrv,.pin-layer") || ($("#modal-root") && $("#modal-root").classList.contains("on")) || S.cartOpen);
+function backGuard(){ if (OFFLINE && !(history.state && history.state.posGuard)) { try { history.pushState({posGuard: 1}, ""); } catch (e) {} } }
+addEventListener("popstate", () => {
+  if (!OFFLINE) return;
+  if (!closeTop() && S.cartOpen) { S.cartOpen = false; render(); }
+  if (anyOpen()) backGuard();
 });
 const mHead = title => `<div class="m-head"><h2>${title}</h2><button class="x" data-close>Close</button></div>`;
 
@@ -1056,7 +1165,7 @@ function pinOk(){
     layer.className = "pin-layer";
     const shell = inner => `<div class="scrim" data-pincancel></div><div class="modal" role="dialog" aria-modal="true" aria-label="Admin PIN">
       <div class="m-head"><h2>Admin PIN</h2><button class="x" data-pincancel>Cancel</button></div><div class="m-body">${inner}</div></div>`;
-    document.body.appendChild(layer);
+    document.body.appendChild(layer); backGuard();
     const done = ok => { layer.remove(); resolve(ok); };
     layer.addEventListener("click", e => { if (e.target.closest("[data-pincancel]")) done(false); });
     if (!hasOwner()) {
@@ -1355,7 +1464,21 @@ document.addEventListener("change", e => { if (e.target.classList && e.target.cl
 })();
 
 /* ---------- render ---------- */
+/* Installed app on Android: keep the screen awake while the app is in front (Settings → Selling) */
+let wakeLock = null;
+async function keepAwake(){
+  const want = OFFLINE && "wakeLock" in navigator && cfg().keepAwake !== false && document.visibilityState === "visible";
+  if (!want) { if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; } return; }
+  if (wakeLock && !wakeLock.released) return;
+  try { wakeLock = await navigator.wakeLock.request("screen"); } catch (e) { wakeLock = null; }
+}
+document.addEventListener("visibilitychange", keepAwake);
+/* Header and banner heights, so the order panel fits the screen on short tablets */
+(function(){ const t = document.querySelector(".top"), b = document.querySelector("#banner"); if (!t || !b) return;
+  const set = () => { const r = document.documentElement.style; r.setProperty("--toph", t.offsetHeight + "px"); r.setProperty("--banh", b.offsetHeight + "px"); };
+  set(); if (window.ResizeObserver) { const ro = new ResizeObserver(set); ro.observe(t); ro.observe(b); } else addEventListener("resize", set); })();
 function render(){
+  keepAwake();
   renderChrome();
   syncLock();
   const a = document.activeElement;
@@ -1455,6 +1578,7 @@ function ticketHTML(){
     <div class="pay">
       <button class="btn banana big" data-act="pay-cash" ${S.cart.length ? "" : "disabled"}>Cash${payLbl}</button>
       <button class="btn teal big" data-act="pay-qr" ${S.cart.length ? "" : "disabled"}>Digital${payLbl || " payment"}</button>
+      ${S.cart.length ? `<button type="button" class="split-pay" data-act="pay-split" ${now < 2 ? "disabled" : ""}>Split: part cash, part digital</button>` : ""}
     </div>
   </aside>`;
 }
@@ -1553,7 +1677,7 @@ function changeQty(key, d){
 }
 /* Amount entry (₱ or %) used for discounts, delivery fee and deposits */
 function openAmount(o){
-  openModal(mHead(o.title) + `<div class="m-body">
+  openModal(mHead(o.title) + `<div class="m-body m-pay">
     ${o.pct ? `<div class="seg" role="group" aria-label="Type"><button data-t="amt" aria-pressed="${o.type !== "pct"}">₱ off</button><button data-t="pct" aria-pressed="${o.type === "pct"}">% off</button></div>` : ""}
     ${o.note ? `<p class="note">${o.note}</p>` : ""}
     <div class="field"><span>${o.label}</span>${numField("amt", {prefix: o.type === "pct" ? "%" : "₱", decimals: true, value: o.value || "", label: o.label, big: true})}</div>
@@ -1581,7 +1705,30 @@ function startPay(kind){
     if (!S.customer.trim()) { toast("Add the customer’s name for a pre-order.", "bad"); $("#cust") && $("#cust").focus(); return; }
     if (!pickupTs()) { toast("Pick the pickup date for this pre-order.", "bad"); return; }
   }
-  if (kind === "cash") openCash(payNow()); else openQR(payNow());
+  if (kind === "cash") openCash(payNow()); else if (kind === "split") openSplit(payNow()); else openQR(payNow());
+}
+/* Split payment: the cash part first, then the rest by digital payment. The order is saved only after both. */
+function openSplit(due){
+  const total = round2(due);
+  openModal(mHead("Split payment") + `<div class="m-body m-pay">
+    <div class="due"><span>Amount due</span><strong class="num">${peso(total)}</strong></div>
+    <div class="field"><span>How much in cash?</span>${numField("cpart", {prefix: "₱", decimals: true, label: "Cash part"})}</div>
+    <div class="change" id="rest"></div>
+    ${padHTML()}
+    <p class="hint">Cash comes first, then the digital part. The order is saved only once both are paid. If the digital part doesn’t go through, close it and hand the cash back.</p>
+    <button class="btn banana big" id="go" disabled>Next</button></div>`, {onMount(m){
+      const rest = $("#rest", m), go = $("#go", m);
+      const upd = pad => {
+        const c = round2(pad.num("cpart")), r = round2(total - c), ok = c > 0 && r > 0;
+        rest.innerHTML = !c ? `<span>Digital part</span><strong>—</strong>` : r > 0 ? `<span>Digital part</span><strong class="num">${peso(r)}</strong>` : `<span>Cash must be less than</span><strong class="num bad">${peso(total)}</strong>`;
+        go.disabled = !ok; go.textContent = ok ? `Next: take ${peso(c)} cash` : "Next";
+      };
+      const pad = attachPad(m, upd); upd(pad);
+      go.onclick = () => {
+        const c = round2(pad.num("cpart")), r = round2(total - c); if (!(c > 0 && r > 0)) return;
+        openCash(c, async cashPay => { openQR(r, qrPay => finalize({parts: [cashPay, qrPay]}), `Split 2 of 2: ${peso(r)} digital`); return true; }, `Split 1 of 2: ${peso(c)} cash`);
+      };
+    }});
 }
 
 /* Number pad: one keypad drives every number box in a modal */
@@ -1676,7 +1823,7 @@ function bindSteppers(m, vals){
 /* Payment */
 function openCash(due, onPaid, title){
   const total = round2(due);
-  openModal(mHead(title || "Cash payment") + `<div class="m-body">
+  openModal(mHead(title || "Cash payment") + `<div class="m-body m-pay">
     <div class="due"><span>Amount due</span><strong class="num">${peso(total)}</strong></div>
     <div class="field"><span>Cash received</span>${numField("recv", {prefix: "₱", decimals: true, label: "Cash received"})}</div>
     <div class="change" id="chg"></div>
@@ -1975,15 +2122,17 @@ async function finalize(pay){
     const [pid, mid] = k.split("|"), a = mixOf(S.products[pid], mid), have = a ? Number(a.stock) || 0 : 0;
     if (have < needMix[k]) { toast(`Only ${have} ${a ? a.label : "of that mix-in"} left. Adjust the order first.`, "bad"); return false; }
   }
-  const now = Date.now(), id = newId("o"), amount = pay.amount != null ? round2(pay.amount) : sum.total;
-  const pre = S.pre.on ? {pickupAt: pickupTs()} : null;
-  const payment = {amount, method: pay.method, at: now, kind: pre && amount < sum.total ? "deposit" : "full",
-    cashReceived: pay.cashReceived == null ? null : pay.cashReceived, change: pay.change == null ? null : pay.change,
-    qrRef: pay.qrRef || null, proof: pay.proof || null, qrLabel: pay.qrLabel || null, refSource: pay.refSource || null};
+  const now = Date.now(), id = newId("o"), parts = Array.isArray(pay.parts) ? pay.parts : [pay];
+  const amount = round2(parts.reduce((a, x) => a + (x.amount != null ? Number(x.amount) : sum.total), 0));
+  const pre = S.pre.on ? {pickupAt: pickupTs()} : null, kind = pre && amount < sum.total ? "deposit" : "full";
+  const payments = parts.map(x => ({amount: x.amount != null ? round2(x.amount) : sum.total, method: x.method, at: now, kind,
+    cashReceived: x.cashReceived == null ? null : x.cashReceived, change: x.change == null ? null : x.change,
+    qrRef: x.qrRef || null, proof: x.proof || null, qrLabel: x.qrLabel || null, refSource: x.refSource || null}));
+  const payment = payments.find(x => x.method === "qr") || payments[0], cashPart = payments.find(x => x.method === "cash");
   const order = {
     id, no: nextOrderNo(now), createdAt: now, day: dayKey(now), items,
     gross: sum.gross, lineDisc: sum.lineDisc, orderDisc: S.orderDisc || null, orderDiscAmt: sum.orderDisc, discount: sum.discount, fee: sum.fee, net: sum.net, total: sum.total,
-    payments: [payment], method: payment.method, cashReceived: payment.cashReceived, change: payment.change, qrRef: payment.qrRef, proof: payment.proof, qrLabel: payment.qrLabel, refSource: payment.refSource,
+    payments, method: payments.length > 1 ? "split" : payment.method, cashReceived: cashPart ? cashPart.cashReceived : null, change: cashPart ? cashPart.change : null, qrRef: payment.qrRef, proof: payment.proof, qrLabel: payment.qrLabel, refSource: payment.refSource, call: nextCallNo(now),
     preorder: pre, customer: S.customer.trim(), note: S.note.trim(), status: "paid"
   };
   try {
@@ -2011,7 +2160,7 @@ async function finalize(pay){
   } catch (e) { return false; }
   S.cart = []; S.customer = ""; S.note = ""; S.cartOpen = false; S.orderDisc = null; S.fee = 0; S.pre = {on: false, date: "", time: "", deposit: null};
   render();
-  toast(`Order ${order.no} saved.`, "ok");
+  toast(`Order #${order.call} saved.`, "ok");
   showSlip(order, true);
   return true;
 }
@@ -2045,15 +2194,15 @@ function slipHTML(o){
   const bal = orderBalance(o);
   const pay = totalRows(o).map(([a, b]) => `<div class="slip-pay"><span>${esc(a)}</span><span class="num">${esc(b)}</span></div>`).join("") + "<!--T-->" + payRows(o).map(([a, b]) => `<div class="slip-pay"><span>${esc(a)}</span><span class="num">${esc(b)}</span></div>`).join("") + (bal ? `<div class="slip-total slip-bal"><span>Balance due</span><span class="num">${peso(bal)}</span></div>` : "");
   const proof = o.proof ? `<div class="slip-proof"><img src="${esc(imgSrc(o.proof))}" alt="Payment proof" data-zoom><span>Payment proof on file (kept in your records, not printed). Tap to enlarge.</span></div>` : "";
-  const single = sellers.length === 1, wm = single && sellers[0].logo && cfg().watermark !== false;
-  const corner = !single && sellers.some(x => x.logo);
+  const single = sellers.length === 1, duo = sellers.length === 2 && !!sellers[0].logo && !!sellers[1].logo;
+  const wm = cfg().watermark !== false && (single ? !!sellers[0].logo : duo), sw = wm && duo ? splitWm(sellers) : null, wmUrl = !wm ? "" : single ? imgSrc(sellers[0].logo) : sw.url;
   const status = o.status === "void" ? "" : `<div class="slip-status"><span>Status</span>${o.fulfilledAt ? `<span class="done">Fulfilled ${fmtDateTime(o.fulfilledAt)}</span>` : bal ? `<span class="todo">Balance due, to fulfill</span>` : `<span class="todo">Paid, to fulfill</span>`}</div>`;
-  return `<div class="slip ${wm ? "wm" : ""} ${corner ? "corners" : ""}" ${wm ? `style="--wm:url('${esc(imgSrc(sellers[0].logo))}')"` : ""}>
-    ${corner ? `<div class="slip-corners">${sellers.slice(0, 2).map(x => x.logo ? `<img src="${esc(imgSrc(x.logo))}" alt="${esc(x.name)} logo">` : "<span></span>").join("")}</div>` : ""}
+  return `<div class="slip ${wm ? "wm" : ""}" ${sw ? `data-wm="${sw.k}"` : ""} ${wmUrl ? `style="--wm:url('${esc(wmUrl)}')"` : ""}>
     ${o.status === "void" ? `<div class="stamp">Voided</div>` : ""}
     ${cfg().eventName ? `<div class="slip-event">${esc(cfg().eventName)}</div>` : ""}
     <div class="slip-shop">${esc(slipBrand(o))}</div>
-    <div class="slip-kind">Customer receipt (not an official receipt)</div>
+    <div class="slip-kind"><b class="slip-doc">${esc(custDoc().toUpperCase())}</b>${CUST_NOTE}</div>
+    ${o.call ? `<div class="slip-call"><span>CALL NUMBER</span><b class="num">#${o.call}</b></div>` : ""}
     <hr>
     <div class="slip-meta"><strong>Order ${esc(o.no)}</strong><span>${fmtDateTime(o.createdAt)}</span></div>
     ${o.customer ? `<div class="slip-for">For ${esc(o.customer)}</div>` : ""}
@@ -2072,7 +2221,9 @@ function slipHTML(o){
 function slipText(o){
   const by = slipBy(o), sellers = orderSellers(o), L = [];
   if (cfg().eventName) L.push(cfg().eventName);
-  L.push(slipBrand(o), "Customer receipt (not an official receipt)", `Order ${o.no}`, fmtDateTime(o.createdAt));
+  L.push(slipBrand(o), custDoc().toUpperCase(), CUST_NOTE);
+  if (o.call) L.push("Call number: #" + o.call);
+  L.push(`Order ${o.no}`, fmtDateTime(o.createdAt));
   if (o.customer) L.push("For " + o.customer);
   if (o.preorder) L.push("Pickup: " + fmtPickup(o.preorder.pickupAt));
   if (o.note) L.push("Note: " + o.note);
@@ -2098,7 +2249,7 @@ async function slipCanvas(o, opts){
   const conf = cfg(), record = !!opts.record, size = opts.size || "regular", thermal = size !== "regular";
   try { await document.fonts.ready; } catch (e) {}
   const W = size === "58" ? 384 : size === "80" ? 576 : 600, SC = thermal ? 1 : 2, P = thermal ? 8 : 36, k = size === "58" ? 1.15 : size === "80" ? 1.3 : 1;
-  const INK = thermal ? "#000" : "#3A271B", MUTED = thermal ? "#000" : "#8A7767", SOFT = thermal ? "#000" : "#5A4638", GOOD = thermal ? "#000" : "#2E7D4F", BAD = thermal ? "#000" : "#B3261E", RULE = thermal ? "#000" : "#CDBBA8";
+  const INK = thermal ? "#000" : "#111", MUTED = thermal ? "#000" : "#666", SOFT = thermal ? "#000" : "#333", GOOD = thermal ? "#000" : "#111", BAD = thermal ? "#000" : "#111", RULE = thermal ? "#000" : "#9A9A9A";
   const FONT = '"Bricolage Grotesque", system-ui, sans-serif';
   const f = (w, px) => `${w} ${Math.round(px * k)}px ${FONT}`, L = n => Math.round(n * k);
   const meas = document.createElement("canvas").getContext("2d");
@@ -2109,32 +2260,35 @@ async function slipCanvas(o, opts){
   const pair = (a, b, font, color) => { T(a, font, P, "left", color); T(b, font, W - P, "right", color); };
   const fit = (img, box) => { const r = Math.min(box / img.naturalWidth, box / img.naturalHeight); return [img.naturalWidth * r, img.naturalHeight * r]; };
   const by = slipBy(o), sellers = orderSellers(o), socials = sellers.filter(x => x.ig), single = sellers.length === 1;
-  const logos = await Promise.all(sellers.map(x => loadImg(x.logo)));
+  const logos = (await Promise.all(sellers.map(x => loadImg(x.logo)))).map(im => monoImg(im, thermal));
+  const mark = single ? logos[0] : sellers.length === 2 && logos[0] && logos[1] ? splitLogo(logos[0], logos[1]) : null;
+  const callBox = () => {
+    if (!o.call) return;
+    const bh = L(98), bw = Math.min(W - 2 * P, L(236)), top = y + L(16), x0 = (W - bw) / 2;
+    ops.push(c => { c.strokeStyle = INK; c.lineWidth = thermal ? 4 : 2.5; c.strokeRect(x0, top, bw, bh); c.textAlign = "center";
+      c.font = f(700, 13); c.fillStyle = MUTED; c.fillText("CALL NUMBER", W / 2, top + L(23));
+      c.font = f(800, 60); c.fillStyle = INK; c.fillText("#" + o.call, W / 2, top + L(82)); });
+    y = top + bh;
+  };
   const isM = opts.copyType === "merchant", isC = opts.copyType === "customer";
   const tag = [isM ? "ORDER SLIP" : "", opts.copy > 1 ? `REPRINT ${opts.copy}` : ""].filter(Boolean).join(", ");
   if (tag) {
     y += L(8); const at = y, h = L(34), solid = opts.copy > 1;
     ops.push(c => {
       if (solid) { c.fillStyle = INK; c.fillRect(P, at, W - 2 * P, h); } else { c.strokeStyle = INK; c.lineWidth = thermal ? 3 : 2; c.strokeRect(P + 1, at + 1, W - 2 * P - 2, h - 2); }
-      c.font = f(800, 17); c.fillStyle = solid ? (thermal ? "#fff" : "#FFFDF8") : INK; c.textAlign = "center"; c.fillText(tag, W / 2, at + h * .68);
+      c.font = f(800, 17); c.fillStyle = solid ? "#fff" : INK; c.textAlign = "center"; c.fillText(tag, W / 2, at + h * .68);
     });
     y = at + h + L(6);
   }
+  if (isM) callBox();
   if (!isM) {
   if (conf.eventName) { wrap(conf.eventName, f(700, 14), W - 2 * P).forEach(ln => { y += L(20); T(ln, f(700, 14), W / 2, "center", MUTED); }); y += L(4); }
-  const corner = !single && logos.some(Boolean), brandFont = f(800, corner && size === "58" ? 24 : 30), lineH = corner && size === "58" ? L(28) : L(34);
-  if (corner) {
-    const box = size === "58" ? L(52) : L(thermal ? 70 : 64), top = y + L(4);
-    logos.slice(0, 2).forEach((img, i) => { if (!img) return; const [w, h] = fit(img, box), x = i === 0 ? P : W - P - box; ops.push(c => c.drawImage(img, x + (box - w) / 2, top + (box - h) / 2, w, h)); });
-    const lines = wrap(slipBrand(o), brandFont, W - 2 * P - 2 * box - L(12));
-    y = top + Math.max(0, (box - lines.length * lineH) / 2) - L(4);
-    lines.forEach(ln => { y += lineH; T(ln, brandFont, W / 2, "center"); });
-    y = Math.max(y, top + box - L(6));
-  } else {
-    if (single && logos[0] && thermal) { const box = L(110), [w, h] = fit(logos[0], box), at = y + L(4), img = logos[0]; ops.push(c => c.drawImage(img, (W - w) / 2, at, w, h)); y = at + h + L(4); }
-    wrap(slipBrand(o), brandFont, W - 2 * P).forEach((ln, i) => { y += i ? L(34) : L(30); T(ln, brandFont, W / 2, "center"); });
-  }
-  y += L(24); T("Customer receipt (not an official receipt)", f(thermal ? 600 : 400, 15), W / 2, "center", MUTED);
+  const brandFont = f(800, 30);
+  if (mark && thermal) { const box = L(110), [w, h] = fit(mark, box), at = y + L(4), img = mark; ops.push(c => c.drawImage(img, (W - w) / 2, at, w, h)); y = at + h + L(4); }
+  wrap(slipBrand(o), brandFont, W - 2 * P).forEach((ln, i) => { y += i ? L(34) : L(30); T(ln, brandFont, W / 2, "center"); });
+  y += L(28); T(custDoc().toUpperCase(), f(800, 16), W / 2, "center");
+  wrap(CUST_NOTE, f(thermal ? 500 : 400, 12.5), W - 2 * P).forEach(ln => { y += L(19); T(ln, f(thermal ? 500 : 400, 12.5), W / 2, "center", MUTED); });
+  callBox();
   y += L(20); rule();
   }
   y += L(32); T("Order " + o.no, f(800, 22), P); if (!thermal || size === "80") T(fmtDateTime(o.createdAt), f(400, 15), W - P, "right", MUTED);
@@ -2168,7 +2322,7 @@ async function slipCanvas(o, opts){
   if (proofImg) {
     y += L(20); rule(); y += L(26); T("Payment proof (record copy only)", f(600, 14), P, "left", MUTED);
     const iw = L(220), ih = Math.round(iw * proofImg.naturalHeight / Math.max(1, proofImg.naturalWidth)), at = y + L(12), img = proofImg;
-    ops.push(c => { c.drawImage(img, P, at, iw, ih); c.strokeStyle = "#EADFCF"; c.lineWidth = 1; c.strokeRect(P, at, iw, ih); });
+    ops.push(c => { c.drawImage(img, P, at, iw, ih); c.strokeStyle = "#D6D6D6"; c.lineWidth = 1; c.strokeRect(P, at, iw, ih); });
     y = at + ih;
   }
   if (socials.length && !isM) {
@@ -2191,17 +2345,17 @@ async function slipCanvas(o, opts){
   y += L(30);
   if (isM) T("For our records: keep with the order", f(600, 14), W / 2, "center", MUTED);
   else {
-    if (isC && !o.fulfilledAt && o.status !== "void") { T("Show this receipt when you claim your order", f(700, 15), W / 2, "center"); y += L(24); }
+    if (isC && !o.fulfilledAt && o.status !== "void") { T("Show this when you claim your order", f(700, 15), W / 2, "center"); y += L(24); }
     wrap(sellers.length > 1 ? "Thank you for supporting small local bakers!" : "Thank you for supporting our small bake shop!", f(thermal ? 600 : 400, 14), W - 2 * P).forEach((ln, i) => { if (i) y += L(20); T(ln, f(thermal ? 600 : 400, 14), W / 2, "center", MUTED); });
   }
   y += thermal ? L(40) : P;
   const cv = document.createElement("canvas"); cv.width = W * SC; cv.height = Math.ceil(y * SC);
   const c = cv.getContext("2d"); c.scale(SC, SC);
-  c.fillStyle = thermal ? "#fff" : "#FFFDF8"; c.fillRect(0, 0, W, y);
-  if (!thermal) { c.strokeStyle = "#EADFCF"; c.lineWidth = 2; c.strokeRect(1, 1, W - 2, y - 2); }
-  if (single && logos[0] && !thermal && !isM && conf.watermark !== false) {
+  c.fillStyle = "#fff"; c.fillRect(0, 0, W, y);
+  if (!thermal) { c.strokeStyle = "#D6D6D6"; c.lineWidth = 2; c.strokeRect(1, 1, W - 2, y - 2); }
+  if (mark && !thermal && !isM && conf.watermark !== false) {
     /* the logo, as wide as the receipt, repeated evenly from top to bottom */
-    const img = logos[0], [w, h] = fit(img, W - 2 * P), gap = Math.max(L(24), h * .18);
+    const img = mark, [w, h] = fit(img, W - 2 * P), gap = Math.max(L(24), h * .18);
     const n = Math.max(1, Math.floor((y - 2 * P + gap) / (h + gap))), sp = n > 1 ? (y - 2 * P - n * h) / (n - 1) : 0, y0 = n > 1 ? P : (y - h) / 2;
     c.save(); c.globalAlpha = .06; for (let i = 0; i < n; i++) c.drawImage(img, (W - w) / 2, y0 + i * (h + sp), w, h); c.restore();
   }
@@ -2288,7 +2442,7 @@ async function printImage(title, cv, filename, note){
 /* A simple receipt-style page builder shared by the report and the test page */
 function paper(size){
   const thermal = size !== "regular", W = size === "58" ? 384 : size === "80" ? 576 : 600, SC = thermal ? 1 : 2, P = thermal ? 8 : 36, k = size === "58" ? 1.15 : size === "80" ? 1.3 : 1;
-  const INK = thermal ? "#000" : "#3A271B", MUTED = thermal ? "#000" : "#8A7767", FONT = '"Bricolage Grotesque", system-ui, sans-serif';
+  const INK = thermal ? "#000" : "#111", MUTED = thermal ? "#000" : "#666", FONT = '"Bricolage Grotesque", system-ui, sans-serif';
   const f = (w, px) => `${w} ${Math.round(px * k)}px ${FONT}`, L = n => Math.round(n * k);
   const ops = []; let y = P;
   const api = {W, P, L, f, INK, MUTED, thermal,
@@ -2326,7 +2480,7 @@ async function eodCanvas(dayTs, size){
   const meas = document.createElement("canvas").getContext("2d");
   const wrap = (t, font, maxW) => { meas.font = font; const out = []; let cur = ""; String(t).split(" ").forEach(w => { const n = cur ? cur + " " + w : w; if (cur && meas.measureText(n).width > maxW) { out.push(cur); cur = w; } else cur = n; }); if (cur) out.push(cur); return out; };
   /* Every seller's logo: tiled across the whole report on a regular printer, or in a row at the top on thermal paper */
-  const logos = cfg().watermark === false ? [] : (await Promise.all(vendorList().map(v => loadImg(sellerInfo(v.id).logo)))).filter(Boolean);
+  const logos = cfg().watermark === false ? [] : (await Promise.all(vendorList().map(v => loadImg(sellerInfo(v.id).logo)))).filter(Boolean).map(im => monoImg(im, pg.thermal));
   if (logos.length && pg.thermal) {
     const box = L(logos.length > 2 ? 64 : 84), gap = L(16), tot = logos.length * box + (logos.length - 1) * gap, at = pg.y + L(6);
     logos.forEach((img, i) => { const r = Math.min(box / img.naturalWidth, box / img.naturalHeight), w = img.naturalWidth * r, h = img.naturalHeight * r, x = (pg.W - tot) / 2 + i * (box + gap); pg.draw(c => c.drawImage(img, x + (box - w) / 2, at + (box - h) / 2, w, h)); });
@@ -2406,23 +2560,23 @@ async function printSlip(o, stepIn){
   catch (e) { toast("Couldn’t prepare the slip for printing.", "bad"); return; }
   const src = cv.toDataURL("image/png"), blob = await new Promise(res => cv.toBlob(b => res(b), "image/png"));
   const sizeName = size === "regular" ? "Regular printer" : size + " mm thermal";
-  const who = type === "merchant" ? "order slip" : "customer receipt", Who = type === "merchant" ? "Order slip" : "Customer receipt";
+  const who = type === "merchant" ? "order slip" : custDoc().toLowerCase(), Who = type === "merchant" ? "Order slip" : custDoc();
   const next = two && step === 0;
   openModal(mHead(`${copy > 1 ? "Reprint" : "Print"} ${who}${two ? ` (${step + 1} of 2)` : ""}`) + `<div class="m-body">
     <div style="max-height:48vh;overflow:auto;background:var(--surface-2);border-radius:12px;padding:10px"><img class="slip-img" src="${src}" alt="${Who} of order ${esc(cur.no)}" style="max-width:${size === "regular" ? "420px" : size === "58" ? "300px" : "380px"}"></div>
-    <p class="hint">${sizeName}. ${type === "merchant" ? `Order slip${conf.packChecks !== false ? " with packing checkboxes" : ""}, to keep with the order.` : "Customer receipt, to hand over as their claim slip and keepsake."}${copy > 1 ? ` Marked as reprint ${copy}.` : ""}${next ? " Tear it off, then print the customer receipt." : ""}</p>
+    <p class="hint">${sizeName}. ${type === "merchant" ? `Order slip${conf.packChecks !== false ? " with packing checkboxes" : ""}, to keep with the order.` : `${custDoc()}, to hand over as their claim slip and keepsake.`}${copy > 1 ? ` Marked as reprint ${copy}.` : ""}${next ? ` Tear it off, then print the ${custDoc().toLowerCase()}.` : ""}</p>
     <div class="btn-row">
       <button class="btn ${inFrame ? "banana" : "ghost"}" data-pp-save>Save for printing</button>
       ${canShareFiles ? `<button class="btn ghost" data-pp-share>Send to printer app</button>` : ""}
       <button class="btn ${inFrame ? "ghost" : "banana"}" data-pp-print>Print ${who}</button>
     </div>
     <p class="hint" id="ppmsg" aria-live="polite">${isIOS && canShareFiles && !inFrame ? "On iPad, Print opens the share sheet: tap Print (AirPrint) or your thermal printer’s app." : inFrame ? "Printing straight from inside the Claude app usually isn’t allowed. Tap “Save for printing”, then open the image in your printer’s app (or in Gallery or Photos, then Print)." : ""}</p>
-    ${next ? `<button class="btn ink big" data-pp-next>Next: print customer receipt</button>` : ""}
+    ${next ? `<button class="btn ink big" data-pp-next>Next: print ${custDoc().toLowerCase()}</button>` : ""}
     <div class="btn-row">${two && step === 1 ? `<button class="btn ghost" data-pp-prev>Back to order slip</button>` : ""}<button class="btn ghost" data-pp-back>${two && step === 1 ? "Done" : "Back to order"}</button></div></div>`, {onMount(m){
       const msg = $("#ppmsg", m), nb = m.querySelector("[data-pp-next]");
       let done = false;
       const sent = text => {
-        msg.textContent = text + (next ? " Tear off the order slip, then tap “Next: print customer receipt”." : "");
+        msg.textContent = text + (next ? ` Tear off the order slip, then tap “Next: print ${custDoc().toLowerCase()}”.` : "");
         if (!done) { done = true; if (step === 0) markPrinted(cur); }
         if (nb) { nb.classList.remove("ink"); nb.classList.add("banana"); nb.focus(); }
       };
@@ -2431,16 +2585,16 @@ async function printSlip(o, stepIn){
         if (e.target.closest("[data-pp-next]")) { if (!done && step === 0) markPrinted(cur); printSlip(Object.assign({}, cur, {__copy: copy}), 1); return; }
         if (e.target.closest("[data-pp-prev]")) { printSlip(Object.assign({}, cur, {__copy: copy}), 0); return; }
         if (e.target.closest("[data-pp-save]")) {
-          const ok = blob && await saveFile(`order-${cur.no}-${type === "merchant" ? "order-slip" : "receipt"}${copy > 1 ? "-reprint" + copy : ""}.png`, blob, "image/png");
+          const ok = blob && await saveFile(`order-${cur.no}-${type === "merchant" ? "order-slip" : custShort()}${copy > 1 ? "-reprint" + copy : ""}.png`, blob, "image/png");
           if (ok) sent("Saved. Open the image in your printer’s app (or Gallery or Photos, then Print).");
           else msg.textContent = "Couldn’t save the image on this device. Press and hold the picture above to save it instead.";
         }
         if (e.target.closest("[data-pp-share]")) {
-          try { await navigator.share({files: [new File([blob], `order-${cur.no}-${type === "merchant" ? "order-slip" : "receipt"}.png`, {type: "image/png"})], title: `Order ${cur.no}, ${who}`}); sent("Sent."); }
+          try { await navigator.share({files: [new File([blob], `order-${cur.no}-${type === "merchant" ? "order-slip" : custShort()}.png`, {type: "image/png"})], title: `Order ${cur.no}, ${who}`}); sent("Sent."); }
           catch (err) { if (!(err && err.name === "AbortError")) msg.textContent = "Sharing isn’t available here. Use “Save for printing”."; }
         }
         if (e.target.closest("[data-pp-print]") && isIOS && canShareFiles) {
-          try { await navigator.share({files: [new File([blob], `order-${cur.no}-${type === "merchant" ? "order-slip" : "receipt"}.png`, {type: "image/png"})], title: `Order ${cur.no}, ${who}`}); sent("Sent."); }
+          try { await navigator.share({files: [new File([blob], `order-${cur.no}-${type === "merchant" ? "order-slip" : custShort()}.png`, {type: "image/png"})], title: `Order ${cur.no}, ${who}`}); sent("Sent."); }
           catch (err) { if (!(err && err.name === "AbortError")) msg.textContent = "Couldn’t open the share sheet. Use “Save for printing”."; }
           return;
         }
@@ -2492,7 +2646,7 @@ function showSlip(o, fresh){
       <div class="btn-row"><button class="btn banana" data-bal="cash">Collect balance: cash</button><button class="btn teal" data-bal="qr">Collect balance: digital</button></div>` : ""}
     ${live && !o.fulfilledAt ? `<div class="btn-row"><button class="btn ghost" data-print>${o.printCount ? "Reprint slip" : "Print slip"}</button><button class="btn banana" data-fulfill ${orderBalance(o) ? "disabled" : ""}>Mark as fulfilled</button></div>
       ${orderBalance(o) ? `<p class="hint">Collect the balance before handing the order over.</p>` : ""}
-      <p class="hint">Print the slip (an order slip with packing checkboxes for the packers, and the customer receipt to hand over), then tap “Mark as fulfilled” once the order is boxed and handed over. A copy of the slip is saved with the order.</p>` : ""}
+      <p class="hint">Print the slip (an order slip with packing checkboxes for the packers, and the ${custDoc().toLowerCase()} to hand over), then tap “Mark as fulfilled” once the order is boxed and handed over. A copy of the slip is saved with the order.</p>` : ""}
     ${live && o.fulfilledAt ? `<div class="btn-row">${o.slip ? `<button class="btn ghost" data-viewslip>View saved slip</button>` : ""}<button class="btn ghost" data-print>Reprint slip</button><button class="btn ghost" data-unfulfill>Undo fulfilled</button></div>` : ""}
     <div class="btn-row">
       <button class="btn ghost" data-copy>Copy as text</button>
@@ -2558,11 +2712,11 @@ function viewOrders(){
   const openPre = orderList().filter(o => o.preorder && o.status !== "void" && !o.fulfilledAt).sort((a, b) => (a.preorder.pickupAt || 0) - (b.preorder.pickupAt || 0));
   let list = f === "pre" ? openPre : orderList().filter(o => o.day === k);
   const paid = orderList().filter(o => o.day === k && o.status !== "void");
-  if (f === "cash") list = list.filter(o => o.method === "cash" && o.status !== "void");
-  if (f === "qr") list = list.filter(o => o.method === "qr" && o.status !== "void");
+  if (f === "cash") list = list.filter(o => o.status !== "void" && orderPays(o).some(x => x.method === "cash"));
+  if (f === "qr") list = list.filter(o => o.status !== "void" && orderPays(o).some(x => x.method === "qr"));
   if (f === "void") list = list.filter(o => o.status === "void");
   if (f === "todo") list = list.filter(o => o.status !== "void" && !o.fulfilledAt);
-  if (q) list = list.filter(o => [o.no, o.customer, o.qrRef, o.note].concat(o.items.map(i => i.name)).join(" ").toLowerCase().includes(q));
+  if (q) list = list.filter(o => [o.no, o.call ? "#" + o.call : "", o.customer, o.qrRef, o.note].concat(o.items.map(i => i.name)).join(" ").toLowerCase().includes(q));
   const sum = paid.reduce((a, o) => a + orderNet(o), 0);
   const todo = paid.filter(o => !o.fulfilledAt).length;
   const seg = [["all", "All"], ["todo", `To fulfill${todo ? " (" + todo + ")" : ""}`], ["pre", `Pre-orders${openPre.length ? " (" + openPre.length + ")" : ""}`], ["cash", "Cash"], ["qr", "Digital"], ["void", "Voided"]].map(([v, l]) =>
@@ -2573,9 +2727,9 @@ function viewOrders(){
     <p class="summary">${f === "pre" ? `${plural(openPre.length, "open pre-order")}, soonest pickup first. Balances still due: ${peso(openPre.reduce((a, o) => a + orderBalance(o), 0))}.` : `${fmtDate(new Date(k + "T00:00").getTime())}: ${plural(paid.length, "paid order")}, ${peso(sum)} in sales${todo ? `, ${todo} still to fulfill` : ""}.`}</p>
     ${S.role === "expeditor" && cfg().expClose !== false ? `<div style="margin-bottom:12px"><button class="btn banana" data-act="close-day">Close the day: count cash and print the report</button></div>` : ""}
     ${list.length ? `<div class="list">${list.map(o => `<button class="orow ${o.status === "void" ? "void" : ""}" data-act="open-order" data-id="${esc(o.id)}">
-        <span class="o-no">#${esc(o.no)}</span><span class="o-time">${fmtTime(o.createdAt)}</span>
+        <span class="o-no">${o.call ? `#${o.call}<small>${esc(o.no)}</small>` : "#" + esc(o.no)}</span><span class="o-time">${fmtTime(o.createdAt)}</span>
         <span class="o-who">${esc(o.customer || "Walk-in")}<small>${plural(o.items.reduce((a, i) => a + i.qty, 0), "item")}${o.preorder ? `, pickup ${esc(fmtPickup(o.preorder.pickupAt))}` : ""}${o.status === "void" ? "" : o.fulfilledAt ? `, <span class="ful-done">fulfilled</span>` : `, <span class="ful-todo">to fulfill</span>`}${orderBalance(o) ? `, <span class="ful-todo">balance ${peso(orderBalance(o))}</span>` : ""}</small></span>
-        <span class="pill ${o.status === "void" ? "void" : o.method}">${o.status === "void" ? "Voided" : o.method === "cash" ? "Cash" : esc(qrName(o))}</span>
+        <span class="pill ${o.status === "void" ? "void" : o.method === "split" ? "qr" : o.method}">${o.status === "void" ? "Voided" : o.method === "cash" ? "Cash" : o.method === "split" ? "Cash + " + esc(qrName(o)) : esc(qrName(o))}</span>
         <strong class="num">${peso(o.total)}</strong></button>`).join("")}</div>`
       : `<div class="empty">${q || f !== "all" ? "No orders match this filter." : "No orders on this day."}</div>`}
   </section>`;
@@ -2957,10 +3111,10 @@ function viewSettings(){
   const where = S.mode === "cloud" ? "Saved to your Claude account and synced to any device where you open this app signed in." : OFFLINE ? "Saved on this tablet, inside the app. Uninstalling the app or clearing Chrome’s data for it erases everything, so back up weekly and keep the file somewhere safe (Google Drive, a USB drive or your computer)." : "Saved in this browser only. Clearing browser data erases it, so export backups often.";
   return `<section class="page"><div class="page-head"><h1>Settings</h1></div><div class="settings">
     <div class="card"><h2>Shop details</h2>
-      <label class="field"><span>Shop name (shown on receipts for your own items)</span><input id="s-name" value="${esc(c.shopName)}" autocomplete="off"></label>
-      <label class="field"><span>Event or stall name (optional, shown at the top of receipts and the end-of-day report)</span><input id="s-event" value="${esc(c.eventName || "")}" placeholder="e.g. Christmas Pop-up Bonanza" autocomplete="off"></label>
+      <label class="field"><span>Shop name (shown on the customer’s copy for your own items)</span><input id="s-name" value="${esc(c.shopName)}" autocomplete="off"></label>
+      <label class="field"><span>Event or stall name (optional, shown at the top of the customer’s copy and the end-of-day report)</span><input id="s-event" value="${esc(c.eventName || "")}" placeholder="e.g. Christmas Pop-up Bonanza" autocomplete="off"></label>
       <label class="field"><span>Instagram (shown as a QR code on slips)</span><input id="s-ig" value="${esc(c.instagram ? "@" + igClean(c.instagram) : "")}" placeholder="@rngwillbake" autocomplete="off" autocapitalize="off"></label>
-      <div class="field"><span>Logo (watermark on your slips, corner logo on collab slips)</span>
+      <div class="field"><span>Logo (watermark on your own orders; half of the shared watermark on collab orders)</span>
         <div class="logo-row"><span class="logo-prev">${c.logo ? `<img src="${esc(imgSrc(c.logo))}" alt="Shop logo">` : "None"}</span>
         <label class="btn ghost sm" style="cursor:pointer"><input type="file" accept="image/*" id="s-logo" hidden>${c.logo ? "Replace" : "Upload logo"}</label>${c.logo ? `<button class="btn ghost sm" data-act="logo-off" style="color:var(--bad)">Remove</button>` : ""}</div></div>
       <button class="btn ink" data-act="save-shop">Save shop details</button>
@@ -2982,14 +3136,17 @@ function viewSettings(){
       <p class="note">Everything expeditors do is recorded in History with their role. Filter History by “By expeditors” to review.</p></div>
     <div class="card"><h2>Selling</h2>
       <div class="field"><span>Tapping an item that’s already in the order</span><div class="seg" role="group" aria-label="Second tap">${[["toggle", "Removes it"], ["add", "Adds one more"]].map(([v, l]) => `<button data-act="tapmode" data-v="${v}" aria-pressed="${(tapToggles() ? "toggle" : "add") === v}">${l}</button>`).join("")}</div></div>
-      <p class="note">${tapToggles() ? "Use + and − in the current order to change how many. A removed item can be brought back with Undo for a few seconds." : "Each tap adds one more. Use − in the current order to take one away."}</p></div>
+      <p class="note">${tapToggles() ? "Use + and − in the current order to change how many. A removed item can be brought back with Undo for a few seconds." : "Each tap adds one more. Use − in the current order to take one away."}</p>
+      ${OFFLINE && "wakeLock" in navigator ? `<label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-awake" ${c.keepAwake !== false ? "checked" : ""}><span>Keep the screen on while the app is open</span></label>` : ""}</div>
     <div class="card"><h2>Printing</h2>
       <div class="field"><span>Slip size</span><div class="seg" role="group" aria-label="Slip size">${[["regular", "Regular printer"], ["58", "58 mm thermal"], ["80", "80 mm thermal"]].map(([v, l]) => `<button data-act="slipsize" data-v="${v}" aria-pressed="${slipSize() === v}">${l}</button>`).join("")}</div></div>
       <p class="note">Thermal sizes print in black only at the paper’s exact width. Most Bluetooth thermal printers print from their own app: tap Print slip, then “Save for printing” (or “Send to printer app” where available) and open the image in that app.</p>
-      <div class="field"><span>Copies each time you print</span><div class="seg" role="group" aria-label="Copies">${[["both", "Order slip + receipt"], ["merchant", "Order slip only"], ["customer", "Receipt only"]].map(([v, l]) => `<button data-act="printcopies" data-v="${v}" aria-pressed="${printCopies() === v}">${l}</button>`).join("")}</div></div>
-      <p class="note">With both, printing is two steps: the order slip prints first so you can tear it off cleanly, then tap “Next: print customer receipt”. The order slip stays with the order for packing and your records (no QR codes, to save paper). The customer receipt is the same receipt shown after payment: their claim slip and keepsake, with the Instagram QR codes and no checkboxes.</p>
+      <div class="field"><span>Copies each time you print</span><div class="seg" role="group" aria-label="Copies">${[["both", "Order slip + " + custShort()], ["merchant", "Order slip only"], ["customer", custDoc() + " only"]].map(([v, l]) => `<button data-act="printcopies" data-v="${v}" aria-pressed="${printCopies() === v}">${l}</button>`).join("")}</div></div>
+      <p class="note">With both, printing is two steps: the order slip prints first so you can tear it off cleanly, then tap “Next: print ${custDoc().toLowerCase()}”. The order slip stays with the order for packing and your records (no QR codes, to save paper). The ${custDoc().toLowerCase()} is the same one shown after payment: the customer’s claim slip and keepsake, with the Instagram QR codes and no checkboxes. Both show the big call number.</p>
+      <div class="field"><span>Title on the customer’s copy</span><div class="seg" role="group" aria-label="Title on the customer’s copy">${[["confirm", "Order confirmation"], ["invoice", "Customer invoice"]].map(([v, l]) => `<button data-act="custtitle" data-v="${v}" aria-pressed="${(cfg().custTitle === "invoice" ? "invoice" : "confirm") === v}">${l}</button>`).join("")}</div></div>
+      <p class="note">Both titles add the line “${CUST_NOTE}”. Note: since the 2024 Ease of Paying Taxes Act, “invoice” is the BIR’s main sales document, so if you’re not BIR-registered, “Order confirmation” stays further from it.</p>
       <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-checks" ${c.packChecks !== false ? "checked" : ""}><span>Packing checkboxes beside each item on the order slip</span></label>
-      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-wm" ${c.watermark !== false ? "checked" : ""}><span>Logo watermark down the whole receipt for single-seller orders, and every seller’s logo across the end-of-day report (screen and regular printer; thermal prints the logos at the top instead)</span></label>
+      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-wm" ${c.watermark !== false ? "checked" : ""}><span>Logo watermark down the whole ${custDoc().toLowerCase()} (on collab orders, half of each seller’s logo side by side), and every seller’s logo across the end-of-day report (screen and regular printer; thermal prints the logo at the top instead)</span></label>
       <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-slipcopy" ${c.slipCopy !== false ? "checked" : ""}><span>When an order is fulfilled, also save a copy of its slip to this device</span></label>
       <p class="note">Printing a slip a second time marks both copies “Reprint 2” at the top so packers don’t box it twice.</p>
       <button class="btn ghost" data-act="test-page">Print a test page</button></div>
@@ -3347,7 +3504,7 @@ function openSeller(id){
   openModal(mHead(v ? "Edit seller" : "Add a seller") + `<div class="m-body">
     <label class="field"><span>Seller or shop name</span><input id="vn" value="${esc(v ? v.name : "")}" placeholder="e.g. basqduma" autocomplete="off" autofocus></label>
     <label class="field"><span>Instagram (shown as a QR code on slips with their items)</span><input id="vi" value="${esc(v && v.instagram ? "@" + igClean(v.instagram) : "")}" placeholder="@theirhandle" autocomplete="off" autocapitalize="off"></label>
-    <div class="field"><span>Logo (watermark on their own slips, corner logo on collab slips)</span>
+    <div class="field"><span>Logo (watermark on their own orders; half of the shared watermark on collab orders)</span>
       <div class="logo-row"><span class="logo-prev" id="vlp">${v && v.logo ? `<img src="${esc(imgSrc(v.logo))}" alt="">` : "None"}</span>
       <label class="btn ghost sm" style="cursor:pointer"><input type="file" accept="image/*" id="vl" hidden>${v && v.logo ? "Replace" : "Upload logo"}</label>${v && v.logo ? `<button type="button" class="btn ghost sm" id="vlx" style="color:var(--bad)">Remove</button>` : ""}</div></div>
     <button class="btn ink big" id="vsave">${v ? "Save changes" : "Add seller"}</button></div>`, {onMount(m){
@@ -3384,8 +3541,10 @@ async function removeSeller(id){
 }
 
 /* ---------- app revisions ---------- */
-const APP_VERSION = "1.10 (November 2026)";
+const APP_VERSION = "1.12 (November 2026)";
 const CHANGES = [
+  ["1.12", "Nov 2026", ["The customer’s copy is now titled “Order confirmation” by default (“Customer invoice” is still in Settings)", "Collab orders: one centred watermark made of half of each seller’s logo, instead of logos in the top corners"]],
+  ["1.11", "Nov 2026", ["Big daily call number (#1, #2…) on the customer’s copy, the order slip and in Orders", "Split payment: part cash, part digital", "Customer’s copy is now titled “Customer invoice” (or “Order confirmation” in Settings) and prints in black, white and greys", "Thermal printing: logos turn into crisp black and white", "Android tablet: layout fits short landscape screens, back gesture closes sheets, screen stays on"]],
   ["1.10", "Nov 2026", ["The receipt shown after payment is the customer receipt; the merchant copy is now the “Order slip”", "Single-seller receipts: the logo watermark runs down the whole receipt", "Optional event or stall name at the top of receipts and the end-of-day report", "Lock or switch user: new Switch user button", "End-of-day report: every seller’s logo across the page, and items sold grouped by seller with totals"]],
   ["1.9", "Nov 2026", ["New Pudding Bar: customers pick a base and one mix-in, one price per cup", "Bases and mix-ins each keep their own servings count; add, edit and restock them in Stock → Pudding Bar"]],
   ["1.8.2", "Nov 2026", ["Gliding across tabs and options is more forgiving near the edges", "Google Drive: “Check connection” button, and Settings shows why a backup didn’t work"]],
@@ -3557,9 +3716,10 @@ $("#view").addEventListener("click", e => {
       el.dataset.armed = "1"; el.textContent = "Tap again"; break;
     }
     case "clear-cart": S.cart = []; S.orderDisc = null; S.fee = 0; S.pre = {on: false, date: "", time: "", deposit: null}; render(); break;
-    case "toggle-cart": S.cartOpen = !S.cartOpen; render(); break;
+    case "toggle-cart": S.cartOpen = !S.cartOpen; if (S.cartOpen) backGuard(); render(); break;
     case "pay-cash": startPay("cash"); break;
     case "pay-qr": startPay("qr"); break;
+    case "pay-split": startPay("split"); break;
     case "goto": { const t = el.dataset.tab; if (S.role === "expeditor" && !["sell", "orders"].concat(cfg().expRestock !== false ? ["stock"] : []).includes(t)) break; const go = () => { S.tab = t; render(); }; if (LOCKED[t]) requirePin(go); else go(); break; }
     case "ofilter": S.ui.ordFilter = el.dataset.v; render(); break;
     case "open-order": { const o = S.orders[id]; if (o) showSlip(o, false); break; }
@@ -3601,7 +3761,8 @@ $("#view").addEventListener("click", e => {
     case "gd-off": pinOk().then(ok => { if (!ok) return; try { if (gToken && gisReady()) google.accounts.oauth2.revoke(gToken, () => {}); } catch (e) {} gToken = null; saveGd({connected: false}).then(() => { toast("Google Drive disconnected."); logAdd([{type: "settings", note: "Google Drive backup disconnected"}]); }).catch(() => {}); }); break;
     case "tapmode": { const v = el.dataset.v; if (v === (tapToggles() ? "toggle" : "add")) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {tapMode: v})).then(() => logAdd([{type: "settings", note: `Second tap on an item: ${v === "toggle" ? "removes it" : "adds one more"}`}])).catch(() => {}); }); break; }
     case "refmode": { const v = el.dataset.v; if (v === refMode()) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {refMode: v})).then(() => logAdd([{type: "settings", note: `Reference number at checkout: ${v === "auto" ? "read from photo" : "typed"}`}])).catch(() => {}); }); break; }
-    case "printcopies": { const v = el.dataset.v; if (v === printCopies()) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {printCopies: v})).then(() => logAdd([{type: "settings", note: `Print copies: ${v === "both" ? "order slip + receipt" : v === "merchant" ? "order slip only" : "receipt only"}`}])).catch(() => {}); }); break; }
+    case "custtitle": { const v = el.dataset.v; if (v === (cfg().custTitle === "invoice" ? "invoice" : "confirm")) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {custTitle: v})).then(() => logAdd([{type: "settings", note: `Customer copy title: ${v === "confirm" ? "Order confirmation" : "Customer invoice"}`}])).catch(() => {}); }); break; }
+    case "printcopies": { const v = el.dataset.v; if (v === printCopies()) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {printCopies: v})).then(() => logAdd([{type: "settings", note: `Print copies: ${v === "both" ? "order slip + " + custShort() : v === "merchant" ? "order slip only" : custShort() + " only"}`}])).catch(() => {}); }); break; }
     case "slipsize": { const v = el.dataset.v; if (v === slipSize()) break; pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {slipSize: v})).then(() => logAdd([{type: "settings", note: `Slip size: ${v === "regular" ? "regular printer" : v + " mm thermal"}`}])).catch(() => {}); }); break; }
     case "logo-off": pinOk().then(ok => { if (ok) put("settings", null, Object.assign({}, S.settings, {logo: null})).then(() => { toast("Logo removed."); logAdd([{type: "settings", note: "Shop logo removed"}]); }).catch(() => {}); }); break;
     case "staff-set": openStaffPin(); break;
@@ -3635,7 +3796,7 @@ $("#view").addEventListener("change", async e => {
   if (t.id === "o-date" && t.value) { S.ui.ordDate = t.value; render(); }
   if (t.id === "h-date" && t.value) { S.ui.hDate = t.value; render(); }
   if (t.id === "h-item") { S.ui.hItem = t.value; render(); }
-  const toggles = {"s-checks": ["packChecks", "Packing checkboxes"], "s-wm": ["watermark", "Logo watermark"], "s-exp-restock": ["expRestock", "Expeditors can restock"], "s-exp-close": ["expClose", "Expeditors can close the day"]};
+  const toggles = {"s-awake": ["keepAwake", "Keep the screen on"], "s-checks": ["packChecks", "Packing checkboxes"], "s-wm": ["watermark", "Logo watermark"], "s-exp-restock": ["expRestock", "Expeditors can restock"], "s-exp-close": ["expClose", "Expeditors can close the day"]};
   if (toggles[t.id]) {
     const [key, label] = toggles[t.id], want = t.checked;
     if (!(await pinOk())) { t.checked = !want; return; }
