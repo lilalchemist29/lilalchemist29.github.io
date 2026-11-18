@@ -922,16 +922,19 @@ const isBar = p => !!p && p.kind === "bar";
 const BAR_BASES = ["Banana", "Creamy vanilla", "Matcha"], BAR_MIXINS = ["Classic", "Biscoff crunch", "Oreo crunch", "Choco chunk", "Strawberry compote"];
 const mixOf = (p, mid) => isBar(p) ? (p.addons || []).find(a => a.id === mid) || null : null;
 const lineMix = l => (l && l.addons && l.addons[0] && l.addons[0].id) || "";
-const mixInCart = (id, mid) => S.cart.filter(x => x.id === id && lineMix(x) === mid).reduce((a, l) => a + l.qty, 0);
+const lineMixes = l => ((l && l.addons) || []).map(a => a.id);
+const mixInCart = (id, mid) => S.cart.filter(x => x.id === id && lineMixes(x).includes(mid)).reduce((a, l) => a + l.qty, 0);
+/* Each mix-in after the first costs extra (set in Stock → Pudding Bar → Edit) */
+const barExtra = p => (p && p.extraMix != null && p.extraMix !== "") ? Number(p.extraMix) || 0 : 20;
 const mixTotal = p => (p.addons || []).reduce((a, x) => a + Math.max(0, Number(x.stock) || 0), 0);
 const barCups = p => Math.max(0, Math.min(stockOf(p), mixTotal(p)));
 const mixName = (p, a) => `${p.name} mix-in: ${a.label}`;
 /* Change a base's and a mix-in's servings together (sale, void) and return the new product plus History entries */
-function barAdjust(p, vid, mid, delta, type, ref, note){
-  const vs = (p.variants || []).map(x => Object.assign({}, x)), as = (p.addons || []).map(x => Object.assign({}, x)), moves = [];
-  const v = vs.find(x => x.id === vid), a = as.find(x => x.id === mid), extra = note ? {note} : {};
+function barAdjust(p, vid, mids, delta, type, ref, note){
+  const vs = (p.variants || []).map(x => Object.assign({}, x)), as = (p.addons || []).map(x => Object.assign({}, x)), moves = [], extra = note ? {note} : {};
+  const v = vs.find(x => x.id === vid);
   if (v) { const from = Number(v.stock) || 0; v.stock = from + delta; moves.push(Object.assign({type, pid: p.id, vid: v.id, name: itemLabel(p, v), from, to: v.stock, delta, ref}, extra)); }
-  if (a) { const from = Number(a.stock) || 0; a.stock = from + delta; moves.push(Object.assign({type, pid: p.id, vid: a.id, name: mixName(p, a), from, to: a.stock, delta, ref}, extra)); }
+  (Array.isArray(mids) ? mids : [mids]).forEach(mid => { const a = as.find(x => x.id === mid); if (!a) return; const from = Number(a.stock) || 0; a.stock = from + delta; moves.push(Object.assign({type, pid: p.id, vid: a.id, name: mixName(p, a), from, to: a.stock, delta, ref}, extra)); });
   return {data: Object.assign({}, p, {variants: vs, addons: as, stock: vs.reduce((t, x) => t + (Number(x.stock) || 0), 0)}), moves};
 }
 const orderList = () => Object.values(S.orders).sort((a, b) => b.createdAt - a.createdAt);
@@ -970,6 +973,8 @@ const lineSeller = it => it.vendorName || sellerInfo(lineVendor(it)).name || "Re
 const slipBrand = o => hasVendors() || o.items.some(it => lineVendor(it) !== HOUSE) ? orderSellers(o).map(x => x.name).join(" \u00d7 ") : cfg().shopName;
 const slipBy = o => hasVendors() || o.items.some(it => lineVendor(it) !== HOUSE);
 /* What the customer's copy is called (Settings → Printing) */
+/* Printing is off until a printer is set up (Settings → Printing) */
+const printOn = () => cfg().printing === true;
 const custDoc = () => cfg().custTitle === "invoice" ? "Customer invoice" : "Order confirmation";
 const custShort = () => cfg().custTitle === "invoice" ? "invoice" : "confirmation";
 const CUST_NOTE = "Not a BIR-registered invoice or official receipt";
@@ -1503,11 +1508,13 @@ function viewSell(){
     l.price = round2((v ? Number(v.price) || 0 : Number(p.price) || 0) + l.addons.reduce((a, x) => a + x.price, 0));
     l.name = itemLabel(p, v, l.addons);
     if (isBar(p)) {
-      l.addons = l.addons.slice(0, 1).map(a => Object.assign(a, {price: 0})); l.price = round2(Number(p.price) || 0); l.name = itemLabel(p, v, l.addons);
-      const mk = "mix|" + l.id + "|" + lineMix(l), a = mixOf(p, lineMix(l));
+      l.addons = l.addons.map((a, i) => Object.assign(a, {price: i ? barExtra(p) : 0}));
+      l.price = round2((Number(p.price) || 0) + barExtra(p) * Math.max(0, l.addons.length - 1)); l.name = itemLabel(p, v, l.addons);
+      const mks = l.addons.map(a => "mix|" + l.id + "|" + a.id);
       if (rem[k] == null) rem[k] = stockOf(p, l.vid || null);
-      if (rem[mk] == null) rem[mk] = a ? Number(a.stock) || 0 : 0;
-      l.qty = Math.min(l.qty, Math.max(0, rem[k]), Math.max(0, rem[mk])); rem[k] -= l.qty; rem[mk] -= l.qty;
+      mks.forEach((mk, i) => { if (rem[mk] == null) { const a = mixOf(p, l.addons[i].id); rem[mk] = a ? Number(a.stock) || 0 : 0; } });
+      l.qty = l.addons.length ? Math.min(l.qty, Math.max(0, rem[k]), ...mks.map(mk => Math.max(0, rem[mk]))) : 0;
+      rem[k] -= l.qty; mks.forEach(mk => { rem[mk] -= l.qty; });
       return;
     }
     if (rem[k] == null) rem[k] = stockOf(p, l.vid || null);
@@ -1546,7 +1553,7 @@ function tileHTML(p){
     <span class="t-name">${esc(p.name)}</span>
     <span class="t-price num">${price}</span>
     ${hasVendors() && (p.vendor || HOUSE) !== HOUSE ? `<span class="t-seller" style="--v:${vendorColor(p.vendor)}"><i></i>${esc(vendorName(p.vendor))}</span>` : ""}
-    <span class="t-stock ${low || full ? "low" : ""}">${label}</span>${removable ? `<span class="t-hint">Tap again to remove</span>` : opt && !out && !full ? `<span class="t-hint">${isBar(p) ? "Choose base & mix-in" : hasVariants(p) ? "Choose size" : "Add-ons available"}</span>` : ""}</button>`;
+    <span class="t-stock ${low || full ? "low" : ""}">${label}</span>${removable ? `<span class="t-hint">Tap again to remove</span>` : opt && !out && !full ? `<span class="t-hint">${isBar(p) ? "Choose base & mix-ins" : hasVariants(p) ? "Choose size" : "Add-ons available"}</span>` : ""}</button>`;
 }
 function ticketHTML(){
   const sum = cartSum(), total = sum.total, n = cartCount(), now = payNow();
@@ -1639,23 +1646,26 @@ function openChooser(p){
 /* Pudding Bar: pick one base and one mix-in */
 function openBarChooser(p){
   const bLeft = id => stockOf(p, id) - inCart(p.id, id), mLeft = id => (Number((mixOf(p, id) || {}).stock) || 0) - mixInCart(p.id, id);
-  let vid = ((p.variants || []).find(v => bLeft(v.id) > 0) || {}).id || null, mid = ((p.addons || []).find(a => mLeft(a.id) > 0) || {}).id || null, qty = 1;
-  const price = round2(Number(p.price) || 0);
-  const grid = (list, on, leftOf, key) => list.length ? `<div class="opt-grid">${list.map(x => { const lf = leftOf(x.id); return `<button type="button" class="opt ${x.id === on ? "on" : ""}" data-${key}="${esc(x.id)}" aria-pressed="${x.id === on}" ${lf <= 0 ? "disabled" : ""}><b>${esc(x.label)}</b><small>${lf <= 0 ? "Sold out" : lf + " left"}</small></button>`; }).join("")}</div>` : `<p class="note">None set up yet. Add them in Stock.</p>`;
+  const first = (p.addons || []).find(a => mLeft(a.id) > 0);
+  let vid = ((p.variants || []).find(v => bLeft(v.id) > 0) || {}).id || null, mids = first ? [first.id] : [], qty = 1;
+  const price = round2(Number(p.price) || 0), extra = barExtra(p);
   openModal(mHead(esc(p.name)) + `<div class="m-body" id="ch"></div>`, {onMount(m){
     const draw = () => {
-      const v = vid ? variantOf(p, vid) : null, a = mid ? mixOf(p, mid) : null;
-      const left = v && a ? Math.min(bLeft(vid), mLeft(mid)) : 0;
+      const v = vid ? variantOf(p, vid) : null, ms = mids.map(id => mixOf(p, id)).filter(Boolean);
+      const left = v && ms.length ? Math.min(bLeft(vid), ...ms.map(a => mLeft(a.id))) : 0;
       qty = Math.max(1, Math.min(qty, Math.max(1, left)));
-      $("#ch", m).innerHTML = `<p class="note">${peso(price)} per cup: one base and one mix-in.</p>
-        <div class="field"><span>1. Base</span>${grid(p.variants || [], vid, bLeft, "bb")}</div>
-        <div class="field"><span>2. Mix-in</span>${grid(p.addons || [], mid, mLeft, "mx")}</div>
+      const each = round2(price + extra * Math.max(0, ms.length - 1));
+      const bases = (p.variants || []).length ? `<div class="opt-grid">${p.variants.map(x => { const lf = bLeft(x.id); return `<button type="button" class="opt ${x.id === vid ? "on" : ""}" data-bb="${esc(x.id)}" aria-pressed="${x.id === vid}" ${lf <= 0 ? "disabled" : ""}><b>${esc(x.label)}</b><small>${lf <= 0 ? "Sold out" : lf + " left"}</small></button>`; }).join("")}</div>` : `<p class="note">None set up yet. Add them in Stock.</p>`;
+      const mixes = (p.addons || []).length ? `<div class="opt-grid">${p.addons.map(x => { const i = mids.indexOf(x.id), on = i >= 0, lf = mLeft(x.id); return `<button type="button" class="opt ${on ? "on" : ""}" data-mx="${esc(x.id)}" aria-pressed="${on}" ${lf <= 0 && !on ? "disabled" : ""}><b>${esc(x.label)}</b><small>${lf <= 0 && !on ? "Sold out" : lf + " left"}${on ? (i === 0 ? " · included" : ` · +${peso(extra)}`) : ""}</small></button>`; }).join("")}</div>` : `<p class="note">None set up yet. Add them in Stock.</p>`;
+      $("#ch", m).innerHTML = `<p class="note">${peso(price)} per cup: one base and one mix-in. Each extra mix-in is +${peso(extra)}.</p>
+        <div class="field"><span>1. Base</span>${bases}</div>
+        <div class="field"><span>2. Mix-ins (tap more for extras, tap again to take one off)</span>${mixes}</div>
         <div class="field"><span>How many cups</span><div class="stepper-row"><button type="button" class="stepbtn" data-q="-1" aria-label="One less">−</button><div class="numfield big num" style="cursor:default"><b>${qty}</b></div><button type="button" class="stepbtn" data-q="1" aria-label="One more">+</button></div></div>
-        <button class="btn banana big" id="ch-add" ${left <= 0 ? "disabled" : ""}>${v && a && left > 0 ? `Add ${qty} · ${esc(v.label)} + ${esc(a.label)} · ${peso(price * qty)}` : "Choose a base and a mix-in"}</button>`;
+        <button class="btn banana big" id="ch-add" ${left <= 0 ? "disabled" : ""}>${v && ms.length && left > 0 ? `Add ${qty} · ${esc(v.label)} + ${ms.map(a => esc(a.label)).join(" + ")} · ${peso(each * qty)}` : "Choose a base and a mix-in"}</button>`;
       $("#ch-add", m).onclick = () => {
-        if (!(v && a) || left <= 0) return;
-        const addons = [{id: a.id, label: a.label, price: 0}];
-        const line = {id: p.id, vid, addons, qty, price, name: itemLabel(p, v, addons)};
+        if (!(v && ms.length) || left <= 0) return;
+        const addons = ms.map((a, i) => ({id: a.id, label: a.label, price: i ? extra : 0}));
+        const line = {id: p.id, vid, addons, qty, price: each, name: itemLabel(p, v, addons)};
         const same = S.cart.find(x => lineKey(x) === lineKey(line));
         if (same) same.qty += qty; else S.cart.push(line);
         closeModal(); render();
@@ -1663,7 +1673,7 @@ function openBarChooser(p){
     };
     m.addEventListener("click", e => {
       const b = e.target.closest("[data-bb]"); if (b && !b.disabled) { vid = b.dataset.bb; draw(); }
-      const x = e.target.closest("[data-mx]"); if (x && !x.disabled) { mid = x.dataset.mx; draw(); }
+      const x = e.target.closest("[data-mx]"); if (x && !x.disabled) { const id = x.dataset.mx, i = mids.indexOf(id); if (i >= 0) mids.splice(i, 1); else mids.push(id); draw(); }
       const q = e.target.closest("[data-q]"); if (q) { qty += Number(q.dataset.q); draw(); }
     });
     draw();
@@ -1671,7 +1681,7 @@ function openBarChooser(p){
 }
 function changeQty(key, d){
   const l = S.cart.find(x => lineKey(x) === key); if (!l) return;
-  if (d > 0 && isBar(S.products[l.id])) { const a = mixOf(S.products[l.id], lineMix(l)); if (!a || mixInCart(l.id, a.id) >= (Number(a.stock) || 0)) { toast(`No more ${a ? a.label : "of that mix-in"} left.`, "bad"); return; } }
+  if (d > 0 && isBar(S.products[l.id])) { const p = S.products[l.id], ids = lineMixes(l), bad = ids.map(id => mixOf(p, id)).find(a => !a || mixInCart(l.id, a.id) >= (Number(a.stock) || 0)); if (!ids.length || bad !== undefined) { toast(`No more ${bad ? bad.label : "of that mix-in"} left.`, "bad"); return; } }
   if (d > 0) { const p = S.products[l.id]; if (p && inCart(l.id, hasVariants(p) ? l.vid : undefined) >= stockOf(p, l.vid || null)) { toast(`No more ${p.name}${l.vid ? " (" + (variantOf(p, l.vid) || {}).label + ")" : ""} in stock.`, "bad"); return; } }
   l.qty += d;
   if (l.qty <= 0) S.cart = S.cart.filter(x => x !== l);
@@ -2119,7 +2129,7 @@ async function finalize(pay){
     if (p && stockOf(p, vid || null) < need[k]) { toast(`Only ${stockOf(p, vid || null)} ${itemLabel(p, vid ? variantOf(p, vid) : null)} left. Adjust the order first.`, "bad"); return false; }
   }
   const needMix = {};
-  items.forEach(it => { if (isBar(S.products[it.pid])) { const k = it.pid + "|" + lineMix(it); needMix[k] = (needMix[k] || 0) + it.qty; } });
+  items.forEach(it => { if (isBar(S.products[it.pid])) lineMixes(it).forEach(mid => { const k = it.pid + "|" + mid; needMix[k] = (needMix[k] || 0) + it.qty; }); });
   for (const k in needMix) {
     const [pid, mid] = k.split("|"), a = mixOf(S.products[pid], mid), have = a ? Number(a.stock) || 0 : 0;
     if (have < needMix[k]) { toast(`Only ${have} ${a ? a.label : "of that mix-in"} left. Adjust the order first.`, "bad"); return false; }
@@ -2145,7 +2155,7 @@ async function finalize(pay){
       const p = S.products[pid]; if (!p) continue;
       if (isBar(p)) {
         let cur = p;
-        for (const it of byProd[pid]) { const r = barAdjust(cur, it.vid, lineMix(it), -it.qty, "sale", order.no); cur = r.data; moves.push(...r.moves); }
+        for (const it of byProd[pid]) { const r = barAdjust(cur, it.vid, lineMixes(it), -it.qty, "sale", order.no); cur = r.data; moves.push(...r.moves); }
         await put("products", pid, cur); continue;
       }
       if (hasVariants(p)) {
@@ -2428,13 +2438,13 @@ async function printImage(title, cv, filename, note){
   openModal(mHead(title) + `<div class="m-body">
     <div style="max-height:52vh;overflow:auto;background:var(--surface-2);border-radius:12px;padding:10px"><img class="slip-img" src="${src}" alt="${esc(title)}" style="max-width:${size === "regular" ? "420px" : size === "58" ? "300px" : "380px"}"></div>
     ${note ? `<p class="hint">${note}</p>` : ""}
-    <div class="btn-row"><button class="btn ${inFrame ? "banana" : "ghost"}" data-g-save>Save for printing</button>${canShareFiles ? `<button class="btn ghost" data-g-share>Send to printer app</button>` : ""}<button class="btn ${inFrame ? "ghost" : "banana"}" data-g-print>Print</button></div>
+    <div class="btn-row">${printOn() ? `<button class="btn ${inFrame ? "banana" : "ghost"}" data-g-save>Save for printing</button>${canShareFiles ? `<button class="btn ghost" data-g-share>Send to printer app</button>` : ""}<button class="btn ${inFrame ? "ghost" : "banana"}" data-g-print>Print</button>` : `<button class="btn banana" data-g-save>Save image</button>${canShareFiles ? `<button class="btn ghost" data-g-share>Share</button>` : ""}`}</div>
     <p class="hint" id="gmsg" aria-live="polite"></p><button class="btn ink" data-close>Done</button></div>`, {onMount(m){
       const msg = $("#gmsg", m), file = () => new File([blob], filename, {type: "image/png"});
       m.addEventListener("click", async e => {
-        if (e.target.closest("[data-g-save]")) msg.textContent = (await saveFile(filename, blob, "image/png")) ? "Saved. Open it in your printer’s app (or Gallery or Photos, then Print)." : "Couldn’t save it here. Press and hold the picture to save it.";
+        if (e.target.closest("[data-g-save]")) msg.textContent = (await saveFile(filename, blob, "image/png")) ? (printOn() ? "Saved. Open it in your printer’s app (or Gallery or Photos, then Print)." : "Saved to this device.") : "Couldn’t save it here. Press and hold the picture to save it.";
         if (e.target.closest("[data-g-share]") || (e.target.closest("[data-g-print]") && isIOS && canShareFiles)) {
-          try { await navigator.share({files: [file()], title}); msg.textContent = "Sent."; } catch (err) { if (!(err && err.name === "AbortError")) msg.textContent = "Sharing isn’t available here. Use “Save for printing”."; }
+          try { await navigator.share({files: [file()], title}); msg.textContent = "Sent."; } catch (err) { if (!(err && err.name === "AbortError")) msg.textContent = `Sharing isn’t available here. Use “${printOn() ? "Save for printing" : "Save image"}”.`; }
           return;
         }
         if (e.target.closest("[data-g-print]")) { msg.textContent = "Opening the print window…"; systemPrint(src, size, () => { msg.textContent = "Sent to the print window."; }, () => { msg.textContent = "This device can’t print from here. Tap “Save for printing”, then open the image in your printer’s app."; }); }
@@ -2629,7 +2639,7 @@ async function fulfillOrder(o){
   try { await put("orders", o.id, upd); } catch (e) { return null; }
   await logAdd([{type: "fulfill", ref: o.no, note: o.customer || ""}]);
   toast(`Order ${o.no} fulfilled. Slip saved to its record.`, "ok");
-  if (cfg().slipCopy !== false) saveSlipImage(upd, true);
+  if (printOn() && cfg().slipCopy !== false) saveSlipImage(upd, true);
   return upd;
 }
 async function unfulfillOrder(o){
@@ -2646,10 +2656,10 @@ function showSlip(o, fresh){
   openModal(mHead(fresh ? "Payment confirmed" : "Order " + esc(o.no)) + `<div class="m-body">${slipHTML(o)}
     ${live && orderBalance(o) ? `<div class="due"><span>Balance due</span><strong class="num">${peso(orderBalance(o))}</strong></div>
       <div class="btn-row"><button class="btn banana" data-bal="cash">Collect balance: cash</button><button class="btn teal" data-bal="qr">Collect balance: digital</button></div>` : ""}
-    ${live && !o.fulfilledAt ? `<div class="btn-row"><button class="btn ghost" data-print>${o.printCount ? "Reprint slip" : "Print slip"}</button><button class="btn banana" data-fulfill ${orderBalance(o) ? "disabled" : ""}>Mark as fulfilled</button></div>
+    ${live && !o.fulfilledAt ? `<div class="btn-row">${printOn() ? `<button class="btn ghost" data-print>${o.printCount ? "Reprint slip" : "Print slip"}</button>` : ""}<button class="btn banana" data-fulfill ${orderBalance(o) ? "disabled" : ""}>Mark as fulfilled</button></div>
       ${orderBalance(o) ? `<p class="hint">Collect the balance before handing the order over.</p>` : ""}
-      <p class="hint">Print the slip (an order slip with packing checkboxes for the packers, and the ${custDoc().toLowerCase()} to hand over), then tap “Mark as fulfilled” once the order is boxed and handed over. A copy of the slip is saved with the order.</p>` : ""}
-    ${live && o.fulfilledAt ? `<div class="btn-row">${o.slip ? `<button class="btn ghost" data-viewslip>View saved slip</button>` : ""}<button class="btn ghost" data-print>Reprint slip</button><button class="btn ghost" data-unfulfill>Undo fulfilled</button></div>` : ""}
+      <p class="hint">${printOn() ? `Print the slip (an order slip with packing checkboxes for the packers, and the ${custDoc().toLowerCase()} to hand over), then tap “Mark as fulfilled” once the order is boxed and handed over. A copy of the slip is saved with the order.` : `Tell the customer their number (#${o.call || o.no}) and let the baker know what to prepare. Tap “Mark as fulfilled” once it’s handed over. It stays under Orders → To fulfill until then.`}</p>` : ""}
+    ${live && o.fulfilledAt ? `<div class="btn-row">${o.slip ? `<button class="btn ghost" data-viewslip>View saved slip</button>` : ""}${printOn() ? `<button class="btn ghost" data-print>Reprint slip</button>` : ""}<button class="btn ghost" data-unfulfill>Undo fulfilled</button></div>` : ""}
     <div class="btn-row">
       <button class="btn ghost" data-copy>Copy as text</button>
       <button class="btn ghost" data-saveimg>Save image</button>
@@ -2689,7 +2699,7 @@ function openVoid(o){
           const moves = [];
           for (const it of o.items) {
             const p = S.products[it.pid]; if (!p) continue;
-            if (isBar(p)) { const r = barAdjust(p, it.vid, lineMix(it), it.qty, "void", o.no, why.value.trim()); await put("products", p.id, r.data); moves.push(...r.moves); continue; }
+            if (isBar(p)) { const r = barAdjust(p, it.vid, lineMixes(it), it.qty, "void", o.no, why.value.trim()); await put("products", p.id, r.data); moves.push(...r.moves); continue; }
             if (hasVariants(p) && it.vid && variantOf(p, it.vid)) {
               const vv = p.variants.map(x => Object.assign({}, x)), v = vv.find(x => x.id === it.vid), from = Number(v.stock) || 0;
               v.stock = from + it.qty;
@@ -2727,7 +2737,7 @@ function viewOrders(){
     <div class="page-head"><h1>Orders</h1><div class="seg" role="group" aria-label="Filter">${seg}</div></div>
     <div class="toolbar"><input type="date" id="o-date" value="${k}" aria-label="Day"><input class="grow" id="o-q" value="${esc(S.ui.q)}" placeholder="Search customer, item or reference" autocomplete="off"></div>
     <p class="summary">${f === "pre" ? `${plural(openPre.length, "open pre-order")}, soonest pickup first. Balances still due: ${peso(openPre.reduce((a, o) => a + orderBalance(o), 0))}.` : `${fmtDate(new Date(k + "T00:00").getTime())}: ${plural(paid.length, "paid order")}, ${peso(sum)} in sales${todo ? `, ${todo} still to fulfill` : ""}.`}</p>
-    ${S.role === "expeditor" && cfg().expClose !== false ? `<div style="margin-bottom:12px"><button class="btn banana" data-act="close-day">Close the day: count cash and print the report</button></div>` : ""}
+    ${S.role === "expeditor" && cfg().expClose !== false ? `<div style="margin-bottom:12px"><button class="btn banana" data-act="close-day">Close the day: count cash and ${printOn() ? "print" : "see"} the report</button></div>` : ""}
     ${list.length ? `<div class="list">${list.map(o => `<button class="orow ${o.status === "void" ? "void" : ""}" data-act="open-order" data-id="${esc(o.id)}">
         <span class="o-no">${o.call ? `#${o.call}<small>${esc(o.no)}</small>` : "#" + esc(o.no)}</span><span class="o-time">${fmtTime(o.createdAt)}</span>
         <span class="o-who">${esc(o.customer || "Walk-in")}<small>${plural(o.items.reduce((a, i) => a + i.qty, 0), "item")}${o.preorder ? `, pickup ${esc(fmtPickup(o.preorder.pickupAt))}` : ""}${o.status === "void" ? "" : o.fulfilledAt ? `, <span class="ful-done">fulfilled</span>` : `, <span class="ful-todo">to fulfill</span>`}${orderBalance(o) ? `, <span class="ful-todo">balance ${peso(orderBalance(o))}</span>` : ""}</small></span>
@@ -2897,19 +2907,20 @@ function barSection(bars, exp){
       return `<div class="bar-row"><span class="b-name">${esc(o.label)}</span><span class="p-stock num ${st <= 0 ? "diff-bad" : ""}" style="${low ? "color:var(--warn)" : ""}">${st}<small>servings</small></span><span class="acts"><button class="btn banana sm" data-act="bar-restock" data-id="${esc(p.id)}" data-o="${esc(o.id)}">Restock</button>${exp ? "" : `<button class="btn ghost sm" data-act="bar-opt" data-id="${esc(p.id)}" data-k="${kind}" data-o="${esc(o.id)}">Edit</button>`}</span></div>`; };
     const part = (head, list, kind, add) => `<div class="bar-part"><h3>${head}</h3>${list.length ? list.map(o => row(o, kind)).join("") : `<p class="note">None yet.</p>`}${exp ? "" : `<button class="btn ghost sm" data-act="bar-opt" data-id="${esc(p.id)}" data-k="${kind}">${add}</button>`}</div>`;
     return title(p.name) + `<div class="card bar-card">
-      <div class="bar-top"><span><b class="num">${peso(p.price)}</b> per cup${p.active === false ? ` <span class="pill hidden">Hidden</span>` : ""}<small>Enough for ${plural(barCups(p), "cup")} right now${hasVendors() ? `, sold by ${esc(vendorName(p.vendor))}` : ""}</small></span>${exp ? "" : `<button class="btn ghost sm" data-act="bar-edit" data-id="${esc(p.id)}">Edit</button>`}</div>
+      <div class="bar-top"><span><b class="num">${peso(p.price)}</b> per cup, extra mix-ins +${peso(barExtra(p))} each${p.active === false ? ` <span class="pill hidden">Hidden</span>` : ""}<small>Enough for ${plural(barCups(p), "cup")} right now${hasVendors() ? `, sold by ${esc(vendorName(p.vendor))}` : ""}</small></span>${exp ? "" : `<button class="btn ghost sm" data-act="bar-edit" data-id="${esc(p.id)}">Edit</button>`}</div>
       <div class="bar-cols">${part("Bases", p.variants || [], "base", "Add a base")}${part("Mix-ins", p.addons || [], "mix", "Add a mix-in")}</div></div>`;
   }).join("");
 }
 /* Set up or edit the Pudding Bar itself: name, cup price, low-stock warning, shown on Sell */
 function openBarEdit(p){
   const isNew = !p;
-  const D = {name: p ? p.name : "Pudding Bar", price: p ? p.price : "", low: p ? lowAt(p) : 5, active: p ? p.active !== false : true, vendor: p ? p.vendor : HOUSE};
+  const D = {name: p ? p.name : "Pudding Bar", price: p ? p.price : "", extra: p ? barExtra(p) : 20, low: p ? lowAt(p) : 5, active: p ? p.active !== false : true, vendor: p ? p.vendor : HOUSE};
   openModal(mHead(isNew ? "Set up the Pudding Bar" : "Edit " + esc(p.name)) + `<div class="m-body">
     <label class="field"><span>Name on the Sell screen</span><input id="bn" value="${esc(D.name)}" placeholder="e.g. Pudding Bar"></label>
     ${hasVendors() ? `<label class="field"><span>Sold by</span><select id="bv" style="border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;font-size:16px;color:var(--ink)">${vendorList().map(v => `<option value="${esc(v.id)}" ${(D.vendor || HOUSE) === v.id ? "selected" : ""}>${esc(v.name)}${v.house ? " (you)" : ""}</option>`).join("")}</select></label>` : ""}
     <div class="field"><span>Price per cup (any base, one mix-in)</span>${numField("price", {prefix: "₱", decimals: true, value: D.price, label: "Price per cup"})}</div>
-    <p class="hint">Tap the price box, then use the keypad.</p>
+    <div class="field"><span>Each extra mix-in</span>${numField("extra", {prefix: "₱", decimals: true, value: D.extra, label: "Each extra mix-in"})}</div>
+    <p class="hint">Tap a price box, then use the keypad.</p>
     ${padHTML()}
     <div class="field"><span>Warn me when a base or mix-in drops to</span>${stepField("low", D.low, "Low stock warning")}</div>
     <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="ba" ${D.active ? "checked" : ""}><span>Show on the Sell screen</span></label>
@@ -2927,9 +2938,10 @@ function openBarEdit(p){
       const old = p ? (S.products[p.id] || p) : null, id = old ? old.id : newId("p");
       const variants = old ? (old.variants || []).map(v => Object.assign({}, v, {price})) : BAR_BASES.map(l => ({id: newId("v"), label: l, price, stock: 0}));
       const addons = old ? (old.addons || []).map(a => Object.assign({}, a)) : BAR_MIXINS.map(l => ({id: newId("m"), label: l, price: 0, stock: 0}));
-      const data = Object.assign({}, old || {}, {id, kind: "bar", name, category: "Pudding Bar", price, lowAt: vals.low, active: $("#ba", m).checked, sort: (old && old.sort) || Date.now(),
+      const extraMix = pad.raw("extra") === "" ? 20 : round2(pad.num("extra"));
+      const data = Object.assign({}, old || {}, {id, kind: "bar", name, category: "Pudding Bar", price, extraMix, lowAt: vals.low, active: $("#ba", m).checked, sort: (old && old.sort) || Date.now(),
         vendor: $("#bv", m) ? $("#bv", m).value : (D.vendor || HOUSE), variants, addons, stock: variants.reduce((t, v) => t + (Number(v.stock) || 0), 0)});
-      const logs = old ? itemChanges(old, Object.assign({}, data, {variants: old.variants, addons: old.addons})) : [{type: "added", pid: id, name, from: 0, to: 0, delta: 0, note: `New Pudding Bar at ${peso(price)} per cup`}];
+      const logs = old ? itemChanges(old, Object.assign({}, data, {variants: old.variants, addons: old.addons})).concat(barExtra(old) !== extraMix ? [{type: "item", pid: id, name, note: `Extra mix-in: ${peso(barExtra(old))} → ${peso(extraMix)}`}] : []) : [{type: "added", pid: id, name, from: 0, to: 0, delta: 0, note: `New Pudding Bar at ${peso(price)} per cup`}];
       try { await put("products", id, data); await logAdd(logs); closeModal(); toast(isNew ? "Pudding Bar is set up. Restock the bases and mix-ins to start selling." : "Pudding Bar saved.", "ok"); } catch (e) {}
     };
     const del = $("#del", m);
@@ -3134,13 +3146,15 @@ function viewSettings(){
       <p class="note">Tap <b>Lock / Switch</b> at the top any time to lock it yourself or hand over to someone else.</p>
       <h3 style="font-size:16px;margin-top:6px">What expeditors can do</h3>
       <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-exp-restock" ${c.expRestock !== false ? "checked" : ""}><span>Restock items after baking (no admin PIN). They can only add stock; editing prices, items or exact counts stays with the admin.</span></label>
-      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-exp-close" ${c.expClose !== false ? "checked" : ""}><span>Count the cash and print the end-of-day report at closing.</span></label>
+      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-exp-close" ${c.expClose !== false ? "checked" : ""}><span>Count the cash and ${printOn() ? "print" : "see"} the end-of-day report at closing.</span></label>
       <p class="note">Everything expeditors do is recorded in History with their role. Filter History by “By expeditors” to review.</p></div>
     <div class="card"><h2>Selling</h2>
       <div class="field"><span>Tapping an item that’s already in the order</span><div class="seg" role="group" aria-label="Second tap">${[["toggle", "Removes it"], ["add", "Adds one more"]].map(([v, l]) => `<button data-act="tapmode" data-v="${v}" aria-pressed="${(tapToggles() ? "toggle" : "add") === v}">${l}</button>`).join("")}</div></div>
       <p class="note">${tapToggles() ? "Use + and − in the current order to change how many. A removed item can be brought back with Undo for a few seconds." : "Each tap adds one more. Use − in the current order to take one away."}</p>
       ${OFFLINE && "wakeLock" in navigator ? `<label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-awake" ${c.keepAwake !== false ? "checked" : ""}><span>Keep the screen on while the app is open</span></label>` : ""}</div>
     <div class="card"><h2>Printing</h2>
+      <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-print" ${printOn() ? "checked" : ""}><span>Use a printer (turn on when you get one)</span></label>
+      ${!printOn() ? `<p class="note">Printing is off, so the print buttons and printer settings are hidden. Orders are handled on screen: the big number shows after payment, and Orders → To fulfill lists what still needs preparing.</p></div>` : `
       <div class="field"><span>Slip size</span><div class="seg" role="group" aria-label="Slip size">${[["regular", "Regular printer"], ["58", "58 mm thermal"], ["80", "80 mm thermal"]].map(([v, l]) => `<button data-act="slipsize" data-v="${v}" aria-pressed="${slipSize() === v}">${l}</button>`).join("")}</div></div>
       <p class="note">Thermal sizes print in black only at the paper’s exact width. Most Bluetooth thermal printers print from their own app: tap Print slip, then “Save for printing” (or “Send to printer app” where available) and open the image in that app.</p>
       <div class="field"><span>Copies each time you print</span><div class="seg" role="group" aria-label="Copies">${[["both", "Order slip + " + custShort()], ["merchant", "Order slip only"], ["customer", custDoc() + " only"]].map(([v, l]) => `<button data-act="printcopies" data-v="${v}" aria-pressed="${printCopies() === v}">${l}</button>`).join("")}</div></div>
@@ -3151,7 +3165,7 @@ function viewSettings(){
       <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-wm" ${c.watermark !== false ? "checked" : ""}><span>Logo watermark down the whole ${custDoc().toLowerCase()} (on collab orders, half of each seller’s logo side by side), and every seller’s logo across the end-of-day report (screen and regular printer; thermal prints the logo at the top instead)</span></label>
       <label class="check toggle-row"><input type="checkbox" class="switch" role="switch" id="s-slipcopy" ${c.slipCopy !== false ? "checked" : ""}><span>When an order is fulfilled, also save a copy of its slip to this device</span></label>
       <p class="note">Printing a slip a second time marks both copies “Reprint 2” at the top so packers don’t box it twice.</p>
-      <button class="btn ghost" data-act="test-page">Print a test page</button></div>
+      <button class="btn ghost" data-act="test-page">Print a test page</button></div>`}
     <div class="card"><h2>Payment QR codes</h2>
       <p class="note">Add one for each bank or e-wallet you accept. At checkout you swipe between them, in this order.</p>
       ${qrs.length ? `<div class="qr-list">${qrs.map((q, i) => `<div class="qr-item"><img src="${esc(imgSrc(q.ref))}" alt="${esc(q.label)} QR code"><b>${esc(q.label)}</b>${q.account ? `<small>${esc(q.account)}</small>` : ""}<div class="acts"><button class="btn ghost sm" data-act="qr-edit" data-i="${i}">Edit</button><button class="btn ghost sm" data-act="qr-del" data-i="${i}" style="color:var(--bad)">Remove</button></div></div>`).join("")}</div>` : `<div class="qr-prev">No QR codes yet</div>`}
@@ -3543,8 +3557,10 @@ async function removeSeller(id){
 }
 
 /* ---------- app revisions ---------- */
-const APP_VERSION = "1.14 (November 2026)";
+const APP_VERSION = "1.16 (November 2026)";
 const CHANGES = [
+  ["1.16", "Nov 2026", ["Printing is off until you get a printer: print buttons and printer settings are hidden (turn it on in Settings → Printing)"]],
+  ["1.15", "Nov 2026", ["Pudding Bar: add more mix-ins to a cup; each extra mix-in is +₱20 (change it in Stock → Pudding Bar → Edit)"]],
   ["1.14", "Nov 2026", ["Big number heading: “You are today’s customer” on the customer’s copy, “Today’s order” on the order slip"]],
   ["1.13", "Nov 2026", ["The big daily number is now headed with the order’s date (e.g. “NOV 16 ORDER”)"]],
   ["1.12", "Nov 2026", ["The customer’s copy is now titled “Order confirmation” by default (“Customer invoice” is still in Settings)", "Collab orders: one centred watermark made of half of each seller’s logo, instead of logos in the top corners"]],
@@ -3800,7 +3816,7 @@ $("#view").addEventListener("change", async e => {
   if (t.id === "o-date" && t.value) { S.ui.ordDate = t.value; render(); }
   if (t.id === "h-date" && t.value) { S.ui.hDate = t.value; render(); }
   if (t.id === "h-item") { S.ui.hItem = t.value; render(); }
-  const toggles = {"s-awake": ["keepAwake", "Keep the screen on"], "s-checks": ["packChecks", "Packing checkboxes"], "s-wm": ["watermark", "Logo watermark"], "s-exp-restock": ["expRestock", "Expeditors can restock"], "s-exp-close": ["expClose", "Expeditors can close the day"]};
+  const toggles = {"s-print": ["printing", "Printing"], "s-awake": ["keepAwake", "Keep the screen on"], "s-checks": ["packChecks", "Packing checkboxes"], "s-wm": ["watermark", "Logo watermark"], "s-exp-restock": ["expRestock", "Expeditors can restock"], "s-exp-close": ["expClose", "Expeditors can close the day"]};
   if (toggles[t.id]) {
     const [key, label] = toggles[t.id], want = t.checked;
     if (!(await pinOk())) { t.checked = !want; return; }
